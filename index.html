@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ワンナイト人狼 オンライン</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #1a1a2e;
+            color: #fff;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 650px;
+            margin: 0 auto;
+            background: #16213e;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        h1 { font-size: 1.5rem; color: #e94560; }
+        h2 { font-size: 1.2rem; color: #f9ed69; }
+        button {
+            background-color: #e94560;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 8px 4px;
+        }
+        button:hover { background-color: #d73852; }
+        button:disabled { background-color: #555; cursor: not-allowed; }
+        .action-btn { background-color: #0f3460; border: 1px solid #e94560; width: 80%; }
+        .action-btn:hover { background-color: #e94560; }
+        select, input[type="number"], input[type="text"] {
+            padding: 6px;
+            font-size: 0.9rem;
+            border-radius: 4px;
+            background: #0f3460;
+            color: white;
+            border: 1px solid #e94560;
+            box-sizing: border-box;
+        }
+        input[type="text"] { width: 80%; margin: 5px 0; text-align: center; }
+        select, input[type="number"] { width: 100%; text-align: center; }
+        .setup-group {
+            background: #0f3460;
+            margin: 8px 0;
+            padding: 10px 15px;
+            border-radius: 8px;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-box {
+            background: #0f3460;
+            margin: 15px 0;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e94560;
+        }
+        .info-card {
+            background: #1f4068;
+            border: 1px dashed #f9ed69;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+        .hidden { display: none; }
+        .role-name { font-size: 1.5rem; font-weight: bold; color: #f9ed69; margin: 10px 0; }
+        .win-title { font-size: 1.8rem; font-weight: bold; color: #4ecca3; margin: 10px 0; }
+        .lose-title { font-size: 1.8rem; font-weight: bold; color: #e94560; margin: 10px 0; }
+        .timer-display { font-size: 2.5rem; font-weight: bold; color: #e94560; margin: 10px 0; }
+        .info-text { font-size: 0.9rem; color: #ccc; }
+        .result-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.85rem; }
+        .result-table th, .result-table td { border: 1px solid #e94560; padding: 6px; }
+        .result-table th { background: #0f3460; }
+        .player-list-item { background: #0f3460; margin: 5px 0; padding: 8px; border-radius: 4px; border: 1px solid #334257; display: flex; justify-content: space-between; align-items: center; }
+
+        .co-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin: 15px 0;
+        }
+        .co-card {
+            background: #0f3460;
+            border: 1px solid #e94560;
+            border-radius: 8px;
+            padding: 10px;
+            width: 170px;
+            box-sizing: border-box;
+            text-align: left;
+        }
+        .co-card-name { font-weight: bold; color: #fff; margin-bottom: 5px; text-align: center; }
+        .memo-label { font-size: 0.7rem; color: #aaa; margin-top: 4px; display: block; }
+        
+        .stats-box { background: #0f3460; border: 1px solid #4ecca3; padding: 10px; border-radius: 8px; margin-top: 15px; text-align: left; font-size: 0.85rem; }
+    </style>
+
+    <!-- Firebase SDK (CDN経由) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <h1>🐺 ワンナイト人狼 オンライン</h1>
+
+    <!-- 1. ロビー画面 -->
+    <div id="screen-lobby">
+        <h2>あなたの名前を入力</h2>
+        <input type="text" id="my-name" placeholder="例: プレイヤー1" maxlength="10">
+        
+        <div style="margin-top:20px; border-top:1px solid #334257; padding-top:20px;">
+            <h3>部屋を作る（ホスト）</h3>
+            <button onclick="createRoom()">新しい部屋を作成</button>
+        </div>
+
+        <div style="margin-top:20px; border-top:1px solid #334257; padding-top:20px;">
+            <h3>部屋に入る</h3>
+            <input type="text" id="join-room-id" placeholder="4桁の部屋番号" maxlength="4">
+            <br>
+            <button onclick="joinRoom()">部屋に参加</button>
+        </div>
+    </div>
+
+    <!-- 2. 待機部屋画面 -->
+    <div id="screen-waiting" class="hidden">
+        <h2>部屋コード: <span id="display-room-id" style="color:#f9ed69;"></span></h2>
+        <p class="info-text">参加者にこの番号を伝えてください</p>
+        
+        <div class="card-box">
+            <h3>参加プレイヤー一覧 (<span id="player-count-num">0</span>人 / 3〜6人)</h3>
+            <div id="waiting-player-list"></div>
+        </div>
+
+        <!-- 📊 ルーム内戦績表示エリア -->
+        <div class="stats-box">
+            <h3 style="margin: 0 0 8px 0; color: #4ecca3; font-size: 0.95rem;">📊 ルーム内戦績・勝率データ</h3>
+            <div id="lobby-stats-content">戦績データはまだありません（ゲームを1回以上行うと集計されます）</div>
+        </div>
+
+        <div id="host-controls" class="hidden" style="margin-top: 15px;">
+            <div class="card-box" style="border-color:#f9ed69;">
+                <h3>🃏 役職カード設定</h3>
+                <p id="card-validation-msg" style="font-weight:bold; font-size:0.95rem;"></p>
+                <div class="setup-group"><label>人狼:</label><input type="number" id="cfg-werewolf" value="2" min="0" max="5" onchange="updateRoleSettings()"></div>
+                <div class="setup-group"><label>占い師:</label><input type="number" id="cfg-seer" value="1" min="0" max="3" onchange="updateRoleSettings()"></div>
+                <div class="setup-group"><label>怪盗:</label><input type="number" id="cfg-thief" value="1" min="0" max="3" onchange="updateRoleSettings()"></div>
+                <div class="setup-group"><label>狂人:</label><input type="number" id="cfg-madman" value="1" min="0" max="3" onchange="updateRoleSettings()"></div>
+                <div class="setup-group"><label>村人:</label><input type="number" id="cfg-villager" value="2" min="0" max="5" onchange="updateRoleSettings()"></div>
+            </div>
+
+            <div class="setup-group">
+                <label>議論タイマー (分):</label>
+                <input type="number" id="timer-minutes" value="1" min="1" max="10" onchange="updateRoleSettings()">
+            </div>
+            <button id="start-game-btn" onclick="startOnlineGame()">ゲーム開始！</button>
+        </div>
+        <p id="client-wait-msg" class="info-text hidden">ホストがゲームを開始するのを待っています...</p>
+    </div>
+
+    <!-- 3. メインゲーム画面 -->
+    <div id="screen-game" class="hidden">
+        <h2 id="phase-title">夜のアクション</h2>
+        <div id="action-area" class="card-box"></div>
+    </div>
+
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyDieZgmE__RspnBope0Ag1kJTN9PHfMc3M",
+        authDomain: "onenightjinro-aef16.firebaseapp.com",
+        projectId: "onenightjinro-aef16",
+        storageBucket: "onenightjinro-aef16.firebasestorage.app",
+        messagingSenderId: "889876151994",
+        appId: "1:889876151994:web:d4e919785a411deff40c83",
+        measurementId: "G-NXYDL0G7T3"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let roomId = "";
+    let myPlayerId = "";
+    let myName = "";
+    let isHost = false;
+    let roomUnsubscribe = null;
+    let localRoomData = null;
+    let timerInterval = null;
+    let myNightActionResultText = "";
+    let personalMemos = {};
+
+    const roleDetails = {
+        "村人": "特殊能力はありません。議論で人狼を見つけ出しましょう！",
+        "人狼": "仲間の人狼を確認できます。",
+        "狂人": "人狼側の味方です。誰が人狼かは分かりません。",
+        "占い師": "誰か1人の初期役職か、中央のカード2枚を確認できます。",
+        "怪盗": "誰か1人と役職を交換できます（新しい役職として勝利を目指します）。"
+    };
+
+    function generateRoomId() {
+        return Math.floor(1000 + Math.random() * 9000).toString();
+    }
+
+    async function createRoom() {
+        myName = document.getElementById('my-name').value.trim();
+        if(!myName) { alert("名前を入力してください"); return; }
+
+        roomId = generateRoomId();
+        myPlayerId = "p_" + Date.now();
+        isHost = true;
+
+        const initialData = {
+            roomId: roomId,
+            status: "waiting",
+            hostId: myPlayerId,
+            players: [{ id: myPlayerId, name: myName }],
+            roleConfig: { "人狼": 2, "占い師": 1, "怪盗": 1, "狂人": 1, "村人": 2 },
+            allDeck: [],
+            initialRoles: {},
+            finalRoles: {},
+            centralCards: [],
+            nightDone: {},
+            votes: {},
+            timerMinutes: 1,
+            timerEndTime: null,
+            playerStats: {}
+        };
+
+        await db.collection("rooms").doc(roomId).set(initialData);
+        listenRoom();
+    }
+
+    async function joinRoom() {
+        myName = document.getElementById('my-name').value.trim();
+        const inputId = document.getElementById('join-room-id').value.trim();
+        if(!myName || !inputId) { alert("名前と部屋番号を入力してください"); return; }
+
+        const docRef = db.collection("rooms").doc(inputId);
+        const doc = await docRef.get();
+
+        if(!doc.exists) { alert("部屋が見つかりません"); return; }
+
+        roomId = inputId;
+        myPlayerId = "p_" + Date.now();
+        isHost = false;
+
+        let players = doc.data().players;
+        players.push({ id: myPlayerId, name: myName });
+
+        await docRef.update({ players: players });
+        listenRoom();
+    }
+
+    function listenRoom() {
+        document.getElementById('screen-lobby').classList.add('hidden');
+        document.getElementById('screen-waiting').classList.remove('hidden');
+        document.getElementById('display-room-id').innerText = roomId;
+
+        roomUnsubscribe = db.collection("rooms").doc(roomId).onSnapshot(doc => {
+            if(!doc.exists) return;
+            const data = doc.data();
+            localRoomData = data;
+            
+            renderRoomState(data);
+        });
+    }
+
+    function renderRoomState(data) {
+        if(data.status === "waiting") {
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-waiting').classList.remove('hidden');
+
+            document.getElementById('waiting-player-list').innerHTML = 
+                data.players.map(p => `<div class="player-list-item"><span>👤 ${p.name} ${p.id === data.hostId ? '(ホスト)' : ''}</span></div>`).join('');
+            document.getElementById('player-count-num').innerText = data.players.length;
+
+            renderLobbyStats(data);
+
+            if(isHost) {
+                document.getElementById('host-controls').classList.remove('hidden');
+                document.getElementById('client-wait-msg').classList.add('hidden');
+                validateRoleConfig(data);
+            } else {
+                document.getElementById('host-controls').classList.add('hidden');
+                document.getElementById('client-wait-msg').classList.add('hidden'); // 修正: 待機中のメッセージを適切に表示
+            }
+        } else {
+            document.getElementById('screen-waiting').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+            renderGamePhase(data);
+        }
+    }
+
+    function renderLobbyStats(data) {
+        const statsContainer = document.getElementById('lobby-stats-content');
+        const stats = data.playerStats || {};
+        const pIds = Object.keys(stats);
+
+        if(pIds.length === 0) {
+            statsContainer.innerHTML = `<p style="color:#ccc; margin:4px 0;">まだゲームが行われていません。</p>`;
+            return;
+        }
+
+        let html = "";
+        data.players.forEach(p => {
+            let pStat = stats[p.id];
+            if(!pStat) {
+                html += `<p style="margin:4px 0;"><b>${p.name}:</b> まだ対戦データなし</p>`;
+                return;
+            }
+
+            let totalRate = pStat.totalPlayed > 0 ? Math.round((pStat.totalWon / pStat.totalPlayed) * 100) : 0;
+            let villagerRate = pStat.villagerPlayed > 0 ? Math.round((pStat.villagerWon / pStat.villagerPlayed) * 100) : 0;
+            let werewolfRate = pStat.werewolfPlayed > 0 ? Math.round((pStat.werewolfWon / pStat.werewolfPlayed) * 100) : 0;
+
+            html += `<div style="border-bottom:1px dashed #334257; padding-bottom:6px; margin-bottom:6px;">`;
+            html += `<b>👤 ${p.name}</b> (総試合: ${pStat.totalPlayed}回)<br>`;
+            html += `・全陣営勝率: <b>${totalRate}%</b> (${pStat.totalWon}/${pStat.totalPlayed}) | `;
+            html += `村人陣営: <b>${villagerRate}%</b> (${pStat.villagerWon}/${pStat.villagerPlayed}) | `;
+            html += `人狼陣営: <b>${werewolfRate}%</b> (${pStat.werewolfWon}/${pStat.werewolfPlayed})<br>`;
+            
+            let roleStrs = [];
+            for(let r in pStat.roles) {
+                let rData = pStat.roles[r];
+                if(rData.played > 0) {
+                    let rRate = Math.round((rData.won / rData.played) * 100);
+                    roleStrs.push(`${r}: ${rRate}% (${rData.won}/${rData.played})`);
+                }
+            }
+            if(roleStrs.length > 0) {
+                html += `<span style="font-size:0.75rem; color:#f9ed69;">役職別: ${roleStrs.join(' / ')}</span>`;
+            }
+            html += `</div>`;
+        });
+
+        statsContainer.innerHTML = html;
+    }
+
+    function validateRoleConfig(data) {
+        const pCount = data.players.length;
+        const targetTotal = pCount + 2;
+
+        const w = parseInt(document.getElementById('cfg-werewolf').value) || 0;
+        const s = parseInt(document.getElementById('cfg-seer').value) || 0;
+        const t = parseInt(document.getElementById('cfg-thief').value) || 0;
+        const m = parseInt(document.getElementById('cfg-madman').value) || 0;
+        const v = parseInt(document.getElementById('cfg-villager').value) || 0;
+        const currentTotal = w + s + t + m + v;
+
+        const msgElem = document.getElementById('card-validation-msg');
+        const btnElem = document.getElementById('start-game-btn');
+        if(!msgElem || !btnElem) return true;
+
+        if (currentTotal !== targetTotal) {
+            msgElem.style.color = "#ff6b6b";
+            msgElem.innerText = `⚠️ 役職数が不適です (現在: ${currentTotal}枚 / 必要: ${targetTotal}枚)`;
+            btnElem.disabled = true;
+            return false;
+        } else {
+            msgElem.style.color = "#4ecca3";
+            msgElem.innerText = `✅ 枚数OK (合計: ${currentTotal}枚)`;
+            btnElem.disabled = false;
+            return true;
+        }
+    }
+
+    async function updateRoleSettings() {
+        if (!isHost) return;
+        const config = {
+            "人狼": parseInt(document.getElementById('cfg-werewolf').value) || 0,
+            "占い師": parseInt(document.getElementById('cfg-seer').value) || 0,
+            "怪盗": parseInt(document.getElementById('cfg-thief').value) || 0,
+            "狂人": parseInt(document.getElementById('cfg-madman').value) || 0,
+            "村人": parseInt(document.getElementById('cfg-villager').value) || 0
+        };
+        const timerMins = parseInt(document.getElementById('timer-minutes').value) || 1;
+
+        await db.collection("rooms").doc(roomId).update({
+            roleConfig: config,
+            timerMinutes: timerMins
+        });
+    }
+
+    async function startOnlineGame() {
+        const players = localRoomData.players;
+        const count = players.length;
+        if(count < 3 || count > 6) { alert("ゲームには合計3〜6人必要です。"); return; }
+        if(!validateRoleConfig(localRoomData)) { alert("役職数が不適です"); return; }
+
+        const config = localRoomData.roleConfig || { "人狼": 2, "占い師": 1, "怪盗": 1, "狂人": 1, "村人": 2 };
+        let deck = [];
+        Object.keys(config).forEach(role => {
+            for(let i=0; i<config[role]; i++) deck.push(role);
+        });
+
+        const allDeckCopy = [...deck];
+        deck.sort(() => Math.random() - 0.5);
+
+        let initRoles = {};
+        let finRoles = {};
+        players.forEach((p, idx) => {
+            initRoles[p.id] = deck[idx];
+            finRoles[p.id] = deck[idx];
+        });
+
+        let centrals = [deck[count], deck[count + 1]];
+        myNightActionResultText = "";
+        personalMemos = {};
+
+        await db.collection("rooms").doc(roomId).update({
+            status: "night_action",
+            allDeck: allDeckCopy,
+            initialRoles: initRoles,
+            finalRoles: finRoles,
+            centralCards: centrals,
+            nightDone: {},
+            votes: {},
+            timerEndTime: null
+        });
+    }
+
+    function renderGamePhase(data) {
+        const area = document.getElementById('action-area');
+        const title = document.getElementById('phase-title');
+
+        if(data.status === "night_action") {
+            title.innerText = "🌙 夜の確認・行動タイム";
+            if(data.nightDone && data.nightDone[myPlayerId]) {
+                area.innerHTML = `<p>夜の行動が完了しました。</p><p class="info-text">他のプレイヤーの完了を待っています...</p>`;
+            } else {
+                renderNightActionsHub(data);
+            }
+        } else if(data.status === "day_discussion") {
+            title.innerText = "☀️ 朝の議論タイム";
+            startTimerSync(data);
+        } else if(data.status === "voting") {
+            title.innerText = "🗳️ 投票フェーズ";
+            if(data.votes && data.votes[myPlayerId] !== undefined) {
+                area.innerHTML = `<p>投票が完了しました。</p><p class="info-text">全員の投票が揃うまでお待ちください...</p>`;
+            } else {
+                renderVotingButtons(data);
+            }
+        } else if(data.status === "result") {
+            title.innerText = "📜 最終結果発表";
+            renderOnlineResults(data);
+        }
+    }
+
+    function renderNightActionsHub(data) {
+        const area = document.getElementById('action-area');
+        const myRole = data.initialRoles[myPlayerId];
+        const players = data.players.filter(p => p.id !== myPlayerId);
+
+        let html = `
+            <div style="border-bottom:1px solid #334257; padding-bottom:10px; margin-bottom:10px;">
+                <p>あなたの初期役職:</p>
+                <p class="role-name">${myRole}</p>
+                <p class="info-text">${roleDetails[myRole] || ''}</p>
+            </div>
+        `;
+
+        if(myRole === "占い師") {
+            html += `<p class="info-text">🔮 占い師の能力対象を選んでください：</p>`;
+            players.forEach(p => {
+                html += `<button class="action-btn" onclick="executeOnlineSeer('${p.id}', '${p.name}')">${p.name} を占う</button><br>`;
+            });
+            html += `<button class="action-btn" style="border-color:#f9ed69;" onclick="executeOnlineSeerCentral()">中央の2枚を占う</button>`;
+        } else if(myRole === "怪盗") {
+            html += `<p class="info-text">👺 怪盗の能力対象を選んでください：</p>`;
+            players.forEach(p => {
+                html += `<button class="action-btn" onclick="executeOnlineThief('${p.id}', '${p.name}')">${p.name} と交換</button><br>`;
+            });
+            html += `<button class="action-btn" style="border-color:#aaa;" onclick="completeNightAction('交換しませんでした')">交換しない</button>`;
+        } else if(myRole === "人狼") {
+            let wolves = data.players.filter(p => data.initialRoles[p.id] === "人狼" && p.id !== myPlayerId);
+            if(wolves.length > 0) {
+                let wNames = wolves.map(w => w.name).join(', ');
+                myNightActionResultText = `仲間の人狼: ${wNames}`;
+                html += `<p>🐺 仲間の人狼: <b>${wNames}</b></p>`;
+            } else {
+                myNightActionResultText = `仲間の人狼はいません（一匹狼）`;
+                html += `<p class="info-text">🐺 仲間の人狼はいません（一匹狼）。</p>`;
+            }
+            html += `<button onclick="completeNightAction()" style="margin-top:10px;">確認・行動完了</button>`;
+        } else {
+            myNightActionResultText = "能力行使なし";
+            html += `<p class="info-text">この役職に夜の特殊能力はありません。</p>`;
+            html += `<button onclick="completeNightAction()" style="margin-top:10px;">確認完了</button>`;
+        }
+
+        area.innerHTML = html;
+    }
+
+    async function executeOnlineSeer(targetId, targetName) {
+        const role = localRoomData.initialRoles[targetId];
+        myNightActionResultText = `${targetName} を占い ➔ “${role}”`;
+        document.getElementById('action-area').innerHTML = `
+            <p>占い結果：</p><p class="role-name">${targetName} は “${role}”</p>
+            <button onclick="completeNightAction()">確認完了</button>
+        `;
+    }
+
+    async function executeOnlineSeerCentral() {
+        const c = localRoomData.centralCards;
+        myNightActionResultText = `中央2枚を占い ➔ “${c[0]}” と “${c[1]}”`;
+        document.getElementById('action-area').innerHTML = `
+            <p>占い結果（中央の2枚）：</p><p class="role-name">“${c[0]}” と “${c[1]}”</p>
+            <button onclick="completeNightAction()">確認完了</button>
+        `;
+    }
+
+    async function executeOnlineThief(targetId, targetName) {
+        let finalRoles = localRoomData.finalRoles;
+        const targetRole = finalRoles[targetId];
+        
+        finalRoles[myPlayerId] = targetRole;
+        finalRoles[targetId] = "怪盗";
+
+        myNightActionResultText = `${targetName} と交換 ➔ 新役職 “${targetRole}”`;
+
+        await db.collection("rooms").doc(roomId).update({ finalRoles: finalRoles });
+
+        document.getElementById('action-area').innerHTML = `
+            <p>${targetName} と役職を交換しました！</p>
+            <p>あなたの新しい役職: <b class="role-name">${targetRole}</b></p>
+            <button onclick="completeNightAction()">確認完了</button>
+        `;
+    }
+
+    async function completeNightAction(customText) {
+        if(customText) myNightActionResultText = customText;
+
+        let nightDone = localRoomData.nightDone || {};
+        nightDone[myPlayerId] = true;
+
+        let updates = { nightDone: nightDone };
+        if(Object.keys(nightDone).length === localRoomData.players.length) {
+            updates.status = "day_discussion";
+            updates.timerEndTime = Date.now() + (localRoomData.timerMinutes * 60 * 1000);
+        }
+        await db.collection("rooms").doc(roomId).update(updates);
+    }
+
+    function startTimerSync(data) {
+        const area = document.getElementById('action-area');
+        const myInitialRole = data.initialRoles[myPlayerId];
+        const deckListStr = (data.allDeck || []).join(' / ');
+
+        let memoCardsHtml = `<div class="co-grid">`;
+        data.players.forEach(p => {
+            let memo = personalMemos[p.id] || { role: "未CO", detail1: "", detail2: "" };
+
+            let extraSelectsHtml = "";
+            if(memo.role === "占い師") {
+                let targetOptions = `<option value="中央2枚">中央2枚</option>`;
+                data.players.forEach(other => {
+                    targetOptions += `<option value="${other.name}" ${memo.detail1 === other.name ? 'selected' : ''}>${other.name}</option>`;
+                });
+                let resOptions = ["村人", "人狼", "占い師", "怪盗", "狂人"].map(r => `<option value="${r}" ${memo.detail2 === r ? 'selected' : ''}>${r}</option>`).join('');
+
+                extraSelectsHtml = `
+                    <span class="memo-label">占先:</span>
+                    <select onchange="updateMemo('${p.id}', 'detail1', this.value)">${targetOptions}</select>
+                    <span class="memo-label">結果:</span>
+                    <select onchange="updateMemo('${p.id}', 'detail2', this.value)"><option value="">選択</option>${resOptions}</select>
+                `;
+            } else if(memo.role === "怪盗") {
+                let targetOptions = `<option value="">選択</option>`;
+                data.players.filter(o => o.id !== p.id).forEach(other => {
+                    targetOptions += `<option value="${other.name}" ${memo.detail1 === other.name ? 'selected' : ''}>${other.name}</option>`;
+                });
+                let stolenOptions = ["村人", "人狼", "占い師", "狂人"].map(r => `<option value="${r}" ${memo.detail2 === r ? 'selected' : ''}>${r}</option>`).join('');
+
+                extraSelectsHtml = `
+                    <span class="memo-label">奪相手:</span>
+                    <select onchange="updateMemo('${p.id}', 'detail1', this.value)">${targetOptions}</select>
+                    <span class="memo-label">獲得:</span>
+                    <select onchange="updateMemo('${p.id}', 'detail2', this.value)"><option value="">選択</option>${stolenOptions}</select>
+                `;
+            }
+
+            let roleOptions = ["未CO", "村人", "占い師", "怪盗", "狂人", "人狼"].map(r => `<option value="${r}" ${memo.role === r ? 'selected' : ''}>${r}</option>`).join('');
+
+            memoCardsHtml += `
+                <div class="co-card">
+                    <div class="co-card-name">${p.name}</div>
+                    <span class="memo-label">役職CO:</span>
+                    <select onchange="updateMemoRole('${p.id}', this.value)">${roleOptions}</select>
+                    ${extraSelectsHtml}
+                </div>
+            `;
+        });
+        memoCardsHtml += `</div>`;
+
+        area.innerHTML = `
+            <p><b>朝の議論タイム</b></p>
+            <div class="timer-display" id="timer">--:--</div>
+
+            <p style="font-size:0.85rem; color:#f9ed69; margin:5px 0;">👇 プレイヤー別メモ（自分のみ表示）</p>
+            ${memoCardsHtml}
+
+            <div class="info-card">
+                <p style="margin:4px 0;">👤 <b>あなたの初期役職:</b> <span style="color:#f9ed69; font-weight:bold;">${myInitialRole}</span></p>
+                <p style="margin:4px 0;">🔍 <b>あなたの夜の行動結果:</b> ${myNightActionResultText || 'なし'}</p>
+                <p style="margin:4px 0; border-top:1px dashed #555; padding-top:4px;">🃏 <b>全体で使用中の役職リスト:</b><br><span style="color:#ccc;">${deckListStr}</span></p>
+            </div>
+
+            ${isHost ? `<button onclick="forceVotingPhase()">今すぐ投票へ進む</button>` : '<p class="info-text">ホストが投票に進むのを待っています...</p>'}
+        `;
+
+        if(timerInterval) clearInterval(timerInterval);
+
+        timerInterval = setInterval(() => {
+            const now = Date.now();
+            const diff = Math.max(0, Math.floor((data.timerEndTime - now) / 1000));
+            const m = Math.floor(diff / 60);
+            const s = diff % 60;
+            
+            const timerElem = document.getElementById('timer');
+            if(timerElem) timerElem.innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+
+            if(diff <= 0) {
+                clearInterval(timerInterval);
+                if(isHost && localRoomData.status === "day_discussion") {
+                    forceVotingPhase();
+                }
+            }
+        }, 1000);
+    }
+
+    function updateMemoRole(playerId, newRole) {
+        if(!personalMemos[playerId]) personalMemos[playerId] = { role: "未CO", detail1: "", detail2: "" };
+        personalMemos[playerId].role = newRole;
+        personalMemos[playerId].detail1 = "";
+        personalMemos[playerId].detail2 = "";
+        startTimerSync(localRoomData);
+    }
+
+    function updateMemo(playerId, field, value) {
+        if(!personalMemos[playerId]) personalMemos[playerId] = { role: "未CO", detail1: "", detail2: "" };
+        personalMemos[playerId][field] = value;
+    }
+
+    async function forceVotingPhase() {
+        await db.collection("rooms").doc(roomId).update({ status: "voting" });
+    }
+
+    function renderVotingButtons(data) {
+        const area = document.getElementById('action-area');
+        let html = `<p class="info-text">処刑したいプレイヤーを選択してください：</p>`;
+        
+        data.players.filter(p => p.id !== myPlayerId).forEach(p => {
+            html += `<button class="action-btn" onclick="submitVote('${p.id}')">${p.name} に投票</button><br>`;
+        });
+        html += `<button class="action-btn" style="border-color:#f9ed69;" onclick="submitVote('none')">🕊️ 平和村を願う</button>`;
+        area.innerHTML = html;
+    }
+
+    async function submitVote(targetId) {
+        let votes = localRoomData.votes || {};
+        votes[myPlayerId] = targetId;
+
+        let updates = { votes: votes };
+        
+        // 修正: 全員の投票が揃ったかどうかを判定し、揃った場合はどのプレイヤーからでも戦績計算を行って保存する
+        if(Object.keys(votes).length === localRoomData.players.length) {
+            updates.status = "result";
+            // 戦績データを計算・結合して更新データに含める
+            let updatedStats = calculateGameResults(localRoomData, votes);
+            updates.playerStats = updatedStats;
+        }
+
+        await db.collection("rooms").doc(roomId).update(updates);
+    }
+
+    // ゲーム結果を計算して新しいplayerStatsオブジェクトを返す関数
+    function calculateGameResults(data, votes) {
+        const players = data.players;
+        const finalRoles = data.finalRoles;
+
+        let voteCounts = {};
+        players.forEach(p => voteCounts[p.id] = 0);
+        Object.values(votes).forEach(t => { if(t !== 'none' && voteCounts[t] !== undefined) voteCounts[t]++; });
+
+        let maxVotes = 0;
+        Object.values(voteCounts).forEach(c => { if(c > maxVotes) maxVotes = c; });
+
+        let hangedIds = [];
+        if (maxVotes >= 2) {
+            Object.keys(voteCounts).forEach(id => {
+                if (voteCounts[id] === maxVotes) hangedIds.push(id);
+            });
+        }
+
+        let aliveWerewolfCount = players.filter(p => finalRoles[p.id] === "人狼").length;
+        let isPeaceVillageScenario = (aliveWerewolfCount === 0);
+        let isVillagerWin = false;
+
+        if (isPeaceVillageScenario) {
+            isVillagerWin = (hangedIds.length === 0);
+        } else {
+            let hangedWerewolf = hangedIds.some(id => finalRoles[id] === "人狼");
+            isVillagerWin = hangedWerewolf;
+        }
+
+        let playerStats = JSON.parse(JSON.stringify(data.playerStats || {}));
+
+        players.forEach(p => {
+            const finalR = finalRoles[p.id];
+            let isWon = false;
+
+            if (isPeaceVillageScenario) {
+                isWon = (hangedIds.length === 0);
+            } else {
+                let isWerewolfCamp = (finalR === "人狼" || finalR === "狂人");
+                isWon = isWerewolfCamp ? !isVillagerWin : isVillagerWin;
+            }
+
+            let isCampWerewolf = (finalR === "人狼" || finalR === "狂人");
+
+            if(!playerStats[p.id]) {
+                playerStats[p.id] = {
+                    totalPlayed: 0, totalWon: 0,
+                    villagerPlayed: 0, villagerWon: 0,
+                    werewolfPlayed: 0, werewolfWon: 0,
+                    roles: {
+                        "村人": { played: 0, won: 0 },
+                        "人狼": { played: 0, won: 0 },
+                        "占い師": { played: 0, won: 0 },
+                        "怪盗": { played: 0, won: 0 },
+                        "狂人": { played: 0, won: 0 }
+                    }
+                };
+            }
+
+            let pStat = playerStats[p.id];
+            pStat.totalPlayed++;
+            if(isWon) pStat.totalWon++;
+
+            if(isCampWerewolf) {
+                pStat.werewolfPlayed++;
+                if(isWon) pStat.werewolfWon++;
+            } else {
+                pStat.villagerPlayed++;
+                if(isWon) pStat.villagerWon++;
+            }
+
+            if(!pStat.roles[finalR]) {
+                pStat.roles[finalR] = { played: 0, won: 0 };
+            }
+            pStat.roles[finalR].played++;
+            if(isWon) pStat.roles[finalR].won++;
+        });
+
+        return playerStats;
+    }
+
+    function renderOnlineResults(data) {
+        const area = document.getElementById('action-area');
+        const players = data.players;
+        const votes = data.votes;
+        const finalRoles = data.finalRoles;
+
+        let voteCounts = {};
+        players.forEach(p => voteCounts[p.id] = 0);
+        Object.values(votes).forEach(t => { if(t !== 'none' && voteCounts[t] !== undefined) voteCounts[t]++; });
+
+        let maxVotes = 0;
+        Object.values(voteCounts).forEach(c => { if(c > maxVotes) maxVotes = c; });
+
+        let hangedIds = [];
+        if (maxVotes >= 2) {
+            Object.keys(voteCounts).forEach(id => {
+                if (voteCounts[id] === maxVotes) hangedIds.push(id);
+            });
+        }
+
+        let aliveWerewolfCount = players.filter(p => finalRoles[p.id] === "人狼").length;
+        let isPeaceVillageScenario = (aliveWerewolfCount === 0);
+        let isVillagerWin = false;
+
+        if (isPeaceVillageScenario) {
+            isVillagerWin = (hangedIds.length === 0);
+        } else {
+            let hangedWerewolf = hangedIds.some(id => finalRoles[id] === "人狼");
+            isVillagerWin = hangedWerewolf;
+        }
+
+        let html = "";
+        if (isPeaceVillageScenario) {
+            if (hangedIds.length === 0) {
+                html = `<div class="win-title">🎉 平和村達成！ 全員勝利！ 🎉</div>`;
+            } else {
+                html = `<div class="lose-title">💀 人狼不在の村で処刑発生... 全員敗北 💀</div>`;
+            }
+        } else {
+            html = isVillagerWin ? 
+                `<div class="win-title">🎉 村人陣営の勝利！</div>` : 
+                `<div class="lose-title">🐺 人狼陣営の勝利！</div>`;
+        }
+
+        if(hangedIds.length > 0) {
+            let names = hangedIds.map(id => players.find(p => p.id === id).name).join(', ');
+            html += `<p style="color:#f9ed69;"><b>処刑された人:</b> ${names} (${maxVotes}票)</p>`;
+        } else {
+            html += `<p style="color:#f9ed69;"><b>処刑者なし (平和村)</b></p>`;
+        }
+
+        html += `<table class="result-table"><tr><th>名前</th><th>初期</th><th>最終</th><th>勝敗</th><th>票</th></tr>`;
+        players.forEach(p => {
+            const finalR = finalRoles[p.id];
+            let isWon = false;
+
+            if (isPeaceVillageScenario) {
+                isWon = (hangedIds.length === 0);
+            } else {
+                let isWerewolfCamp = (finalR === "人狼" || finalR === "狂人");
+                isWon = isWerewolfCamp ? !isVillagerWin : isVillagerWin;
+            }
+
+            let winText = isWon ? `<span style="color:#4ecca3; font-weight:bold;">勝利 ⭕</span>` : `<span style="color:#e94560;">敗北 ❌</span>`;
+
+            html += `<tr><td><b>${p.name}</b></td><td>${data.initialRoles[p.id]}</td><td><b>${finalR}</b></td><td>${winText}</td><td>${voteCounts[p.id]}票</td></tr>`;
+        });
+        html += `</table>`;
+        html += `<p style="font-size:0.8rem; color:#ccc; margin-top:10px;">中央カード: ${data.centralCards.join(', ')}</p>`;
+
+        if(isHost) {
+            html += `<button onclick="resetOnlineRoom()" style="margin-top:15px;">もう一度遊ぶ（ロビーへ）</button>`;
+        }
+
+        area.innerHTML = html;
+    }
+
+    async function resetOnlineRoom() {
+        await db.collection("rooms").doc(roomId).update({
+            status: "waiting",
+            initialRoles: {},
+            finalRoles: {},
+            centralCards: [],
+            nightDone: {},
+            votes: {},
+            timerEndTime: null
+        });
+    }
+</script>
+
+</body>
+</html>
