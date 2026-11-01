@@ -90,8 +90,7 @@
             flex-wrap: wrap;
             gap: 10px;
             justify-content: center;
-            margin: 15px 0;
-        }
+上が画像・下が文字になるよう縦並びコンテナのスタイル設定        }
         .co-card {
             background: #0f3460;
             border: 1px solid #e94560;
@@ -106,6 +105,24 @@
         
         .stats-box { background: #0f3460; border: 1px solid #4ecca3; padding: 10px; border-radius: 8px; margin-top: 15px; text-align: left; font-size: 0.85rem; }
         .toggle-btn { background-color: #1f4068; border: 1px solid #4ecca3; font-size: 0.85rem; padding: 6px 12px; margin-bottom: 8px; }
+
+        /* 上に画像、下に文字を配置するための縦並びレイアウト用スタイル */
+        .role-badge {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            vertical-align: middle;
+            line-height: 1.2;
+        }
+        .role-badge img {
+            height: 36px; /* アイコンの基本高さ */
+            object-fit: contain;
+            margin-bottom: 2px;
+        }
+        .role-badge span {
+            font-size: 0.8rem;
+            color: #fff;
+        }
     </style>
 
     <!-- Firebase SDK (CDN経由) -->
@@ -155,11 +172,11 @@
             <div class="card-box" style="border-color:#f9ed69;">
                 <h3>🃏 役職カード設定</h3>
                 <p id="card-validation-msg" style="font-weight:bold; font-size:0.95rem;"></p>
-                <div class="setup-group"><label>🐺 人狼:</label><input type="number" id="cfg-werewolf" value="2" min="0" max="5" onchange="updateRoleSettings()"></div>
-                <div class="setup-group"><label>🔮 占い師:</label><input type="number" id="cfg-seer" value="1" min="0" max="3" onchange="updateRoleSettings()"></div>
-                <div class="setup-group"><label>🦹 怪盗:</label><input type="number" id="cfg-thief" value="1" min="0" max="3" onchange="updateRoleSettings()"></div>
-                <div class="setup-group"><label>🃏 狂人:</label><input type="number" id="cfg-madman" value="1" min="0" max="3" onchange="updateRoleSettings()"></div>
-                <div class="setup-group"><label>🧑‍🌾 村人:</label><input type="number" id="cfg-villager" value="2" min="0" max="5" onchange="updateRoleSettings()"></div>
+                <div class="setup-group"><label>人狼:</label><input type="number" id="cfg-werewolf" value="2" min="0" max="5" onchange="updateRoleSettings()"></div>
+                <div class="setup-group"><label>占い師:</label><input type="number" id="cfg-seer" value="1" min="0" max="3" onchange="updateRoleSettings()"></div>
+                <div class="setup-group"><label>怪盗:</label><input type="number" id="cfg-thief" value="1" min="0" max="3" onchange="updateRoleSettings()"></div>
+                <div class="setup-group"><label>狂人:</label><input type="number" id="cfg-madman" value="1" min="0" max="3" onchange="updateRoleSettings()"></div>
+                <div class="setup-group"><label>村人:</label><input type="number" id="cfg-villager" value="2" min="0" max="5" onchange="updateRoleSettings()"></div>
             </div>
 
             <div class="setup-group">
@@ -203,18 +220,14 @@
     let myNightActionResultText = "";
     let personalMemos = {};
 
+    // 上に画像、下に文字が来る縦並びのHTML構造に修正
     const roleIcons = {
-        "村人": "🧑‍🌾 村人",
-        "人狼": "🐺 人狼",
-        "占い師": "🔮 占い師",
-        "怪盗": "🦹 怪盗",
-        "狂人": "🃏 狂人",
-　　　　"村人": '<img src="murabito.png" style="height:1.2em; vertical-align:middle;"> 村人',
-    　　"人狼": '<img src="jinrou.png" style="height:1.2em; vertical-align:middle;"> 人狼',
-    　　"占い師": '<img src="uranaishi.png" style="height:1.2em; vertical-align:middle;"> 占い師',
-    　　"怪盗": '<img src="kaitou.png" style="height:1.2em; vertical-align:middle;"> 怪盗',
-    　　"狂人": '<img src="kyoujin.png" style="height:1.2em; vertical-align:middle;"> 狂人',
-        "未CO": "未CO"
+        "村人": '<span class="role-badge"><img src="murabito.png"><span>村人</span></span>',
+        "人狼": '<span class="role-badge"><img src="jinrou.png"><span>人狼</span></span>',
+        "占い師": '<span class="role-badge"><img src="uranaishi.png"><span>占い師</span></span>',
+        "怪盗": '<span class="role-badge"><img src="kaitou.png"><span>怪盗</span></span>',
+        "狂人": '<span class="role-badge"><img src="kyoujin.png"><span>狂人</span></span>',
+        "未CO": '<span class="role-badge"><img src="unknown.png"><span>未CO</span></span>'
     };
 
     const roleDetails = {
@@ -470,7 +483,6 @@
             }
         } else if(data.status === "day_discussion") {
             title.innerText = "☀️ 朝の議論タイム";
-            // すでに議論画面が構築されている場合はタイマー再生成を防ぎ、メモのみ更新
             if (!document.getElementById('timer')) {
                 startTimerSync(data);
             } else {
