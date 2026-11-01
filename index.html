@@ -590,8 +590,8 @@
         let memoCardsHtml = `<div class="co-grid">`;
         data.players.forEach(p => {
             // detail1: 占先(プレイヤー名 or "中央2枚")
-            // detail2: 結果1 (占い師がプレイヤーを占った場合の結果、または中央1枚目)
-            // detail3: 結果2 (占い師が「中央2枚」を占った場合のみ使用する2枚目の結果)
+            // detail2: 結果1 (プレイヤー占い時の結果、または中央1枚目)
+            // detail3: 結果2 (中央2枚占い時の2枚目の結果)
             let memo = personalMemos[p.id] || { role: "未CO", detail1: "", detail2: "", detail3: "" };
 
             let extraSelectsHtml = "";
@@ -696,7 +696,7 @@
     function updateMemo(playerId, field, value) {
         if(!personalMemos[playerId]) personalMemos[playerId] = { role: "未CO", detail1: "", detail2: "", detail3: "" };
         personalMemos[playerId][field] = value;
-        // 占先が「中央2枚」からプレイヤーに変更された場合、detail3をクリアして再描画
+        // 占先が「中央2枚」から特定プレイヤーに変更された場合は2枚目結果をクリア
         if (field === 'detail1') {
             if (value !== '中央2枚') {
                 personalMemos[playerId].detail3 = "";
@@ -917,7 +917,7 @@
             allDeck: [],
             initialRoles: {},
             finalRoles: {},
-            centralCards: {},
+            centralCards: [],
             nightDone: {},
             votes: {},
             timerEndTime: null
