@@ -203,7 +203,6 @@
     let myNightActionResultText = "";
     let personalMemos = {};
 
-    // 役職表示用アイコンマップ
     const roleIcons = {
         "村人": "🧑‍🌾 村人",
         "人狼": "🐺 人狼",
@@ -466,7 +465,12 @@
             }
         } else if(data.status === "day_discussion") {
             title.innerText = "☀️ 朝の議論タイム";
-            startTimerSync(data);
+            // すでに議論画面が構築されている場合はタイマー再生成を防ぎ、メモのみ更新
+            if (!document.getElementById('timer')) {
+                startTimerSync(data);
+            } else {
+                renderMemoGridOnly();
+            }
         } else if(data.status === "voting") {
             title.innerText = "🗳️ 投票フェーズ";
             if(data.votes && data.votes[myPlayerId] !== undefined) {
@@ -580,18 +584,9 @@
         await db.collection("rooms").doc(roomId).update(updates);
     }
 
-    function startTimerSync(data) {
-        const area = document.getElementById('action-area');
-        const myInitialRole = data.initialRoles[myPlayerId];
-        const displayMyInitialRole = roleIcons[myInitialRole] || myInitialRole;
-        
-        const deckListStr = (data.allDeck || []).map(r => roleIcons[r] || r).join(' / ');
-
+    function buildMemoGridHtml(data) {
         let memoCardsHtml = `<div class="co-grid">`;
         data.players.forEach(p => {
-            // detail1: 占先(プレイヤー名 or "中央2枚")
-            // detail2: 結果1 (プレイヤー占い時の結果、または中央1枚目)
-            // detail3: 結果2 (中央2枚占い時の2枚目の結果)
             let memo = personalMemos[p.id] || { role: "未CO", detail1: "", detail2: "", detail3: "" };
 
             let extraSelectsHtml = "";
@@ -647,13 +642,28 @@
             `;
         });
         memoCardsHtml += `</div>`;
+        return memoCardsHtml;
+    }
+
+    function renderMemoGridOnly() {
+        const container = document.getElementById('memo-grid-container');
+        if (container && localRoomData) {
+            container.innerHTML = buildMemoGridHtml(localRoomData);
+        }
+    }
+
+    function startTimerSync(data) {
+        const area = document.getElementById('action-area');
+        const myInitialRole = data.initialRoles[myPlayerId];
+        const displayMyInitialRole = roleIcons[myInitialRole] || myInitialRole;
+        const deckListStr = (data.allDeck || []).map(r => roleIcons[r] || r).join(' / ');
 
         area.innerHTML = `
             <p><b>朝の議論タイム</b></p>
             <div class="timer-display" id="timer">--:--</div>
 
             <p style="font-size:0.85rem; color:#f9ed69; margin:5px 0;">👇 プレイヤー別メモ（自分のみ表示）</p>
-            ${memoCardsHtml}
+            <div id="memo-grid-container">${buildMemoGridHtml(data)}</div>
 
             <div class="info-card">
                 <p style="margin:4px 0;">👤 <b>あなたの初期役職:</b> <span style="color:#f9ed69; font-weight:bold;">${displayMyInitialRole}</span></p>
@@ -690,18 +700,17 @@
         personalMemos[playerId].detail1 = (newRole === "占い師") ? "中央2枚" : "";
         personalMemos[playerId].detail2 = "";
         personalMemos[playerId].detail3 = "";
-        startTimerSync(localRoomData);
+        renderMemoGridOnly();
     }
 
     function updateMemo(playerId, field, value) {
         if(!personalMemos[playerId]) personalMemos[playerId] = { role: "未CO", detail1: "", detail2: "", detail3: "" };
         personalMemos[playerId][field] = value;
-        // 占先が「中央2枚」から特定プレイヤーに変更された場合は2枚目結果をクリア
         if (field === 'detail1') {
             if (value !== '中央2枚') {
                 personalMemos[playerId].detail3 = "";
             }
-            startTimerSync(localRoomData);
+            renderMemoGridOnly();
         }
     }
 
@@ -726,7 +735,6 @@
 
         let updates = { votes: votes };
         
-        // 全員の投票が揃った瞬間に勝敗・戦績を計算
         if(Object.keys(votes).length === localRoomData.players.length) {
             updates.status = "result";
             let updatedStats = calculateGameResults(localRoomData, votes);
