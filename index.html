@@ -7,8 +7,8 @@
     <style>
         body {
             font-family: sans-serif;
-            background-color: #1a1a2e;
-            color: #fff;
+            background-color: #12121e;
+            color: #e2e8f0;
             text-align: center;
             padding: 20px;
             margin: 0;
@@ -16,115 +16,154 @@
         .container {
             max-width: 650px;
             margin: 0 auto;
-            background: #16213e;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            background: #1a1a2e;
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+            border: 1px solid #2a2a40;
         }
-        h1 { font-size: 1.5rem; color: #e94560; }
-        h2 { font-size: 1.2rem; color: #f9ed69; }
+        h1 { font-size: 1.6rem; color: #ff4757; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        h2 { font-size: 1.3rem; color: #f1c40f; }
+        
+        /* ボタン共通スタイル */
         button {
-            background-color: #e94560;
+            background: linear-gradient(135deg, #ff4757, #ff6b81);
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 12px 24px;
             font-size: 1rem;
-            border-radius: 6px;
+            font-weight: bold;
+            border-radius: 8px;
             cursor: pointer;
             margin: 8px 4px;
+            box-shadow: 0 4px 10px rgba(255, 71, 87, 0.3);
             transition: all 0.2s ease;
         }
-        button:hover { background-color: #d73852; }
-        button:disabled { background-color: #555; cursor: not-allowed; }
-        .action-btn { background-color: #0f3460; border: 1px solid #e94560; width: 80%; }
-        .action-btn:hover { background-color: #e94560; }
+        button:hover {
+            background: linear-gradient(135deg, #ff6b81, #ff4757);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(255, 71, 87, 0.4);
+        }
+        button:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 5px rgba(255, 71, 87, 0.3);
+        }
+        button:disabled {
+            background: #4a5568 !important;
+            color: #a0aec0 !important;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        /* アクションボタン（プレイヤー選択など） */
+        .action-btn { 
+            background: linear-gradient(135deg, #1e293b, #0f172a); 
+            border: 1px solid #ff4757; 
+            width: 85%; 
+            color: #f8fafc;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        .action-btn:hover { 
+            background: linear-gradient(135deg, #ff4757, #ff6b81);
+            color: white;
+            border-color: #ff6b81;
+        }
         
-        /* 選択（クリック）されたボタンの強力なハイライト表示 */
+        /* 選択中のボタン強調 */
         .action-btn.selected-target {
-            background-color: #4ecca3 !important;
-            color: #1a1a2e !important;
+            background: linear-gradient(135deg, #059669, #10b981) !important;
+            color: #ffffff !important;
             font-weight: bold;
-            border: 3px solid #ffffff !important;
-            box-shadow: 0 0 15px rgba(78, 204, 163, 1);
+            border: 2px solid #34d399 !important;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.6) !important;
         }
 
         select, input[type="number"], input[type="text"] {
-            padding: 6px;
-            font-size: 0.9rem;
-            border-radius: 4px;
-            background: #0f3460;
+            padding: 8px 12px;
+            font-size: 0.95rem;
+            border-radius: 6px;
+            background: #0f172a;
             color: white;
-            border: 1px solid #e94560;
+            border: 1px solid #334155;
             box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        select:focus, input:focus {
+            border-color: #ff4757;
         }
         input[type="text"] { width: 80%; margin: 5px 0; text-align: center; }
         select, input[type="number"] { width: 100%; text-align: center; }
+
         .setup-group {
-            background: #0f3460;
-            margin: 8px 0;
-            padding: 10px 15px;
-            border-radius: 8px;
+            background: #0f172a;
+            margin: 10px 0;
+            padding: 12px 16px;
+            border-radius: 10px;
             text-align: left;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border: 1px solid #1e293b;
         }
         .card-box {
-            background: #0f3460;
+            background: #16213e;
             margin: 15px 0;
             padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #e94560;
+            border-radius: 12px;
+            border: 1px solid #2a3b5c;
         }
         .info-card {
-            background: #1f4068;
-            border: 1px dashed #f9ed69;
-            padding: 12px;
-            border-radius: 8px;
+            background: #1e293b;
+            border: 1px dashed #f1c40f;
+            padding: 14px;
+            border-radius: 10px;
             margin: 15px 0;
             text-align: left;
             font-size: 0.9rem;
         }
         .hidden { display: none; }
-        .role-name { font-size: 1.5rem; font-weight: bold; color: #f9ed69; margin: 10px 0; }
-        .win-title { font-size: 1.8rem; font-weight: bold; color: #4ecca3; margin: 10px 0; }
-        .lose-title { font-size: 1.8rem; font-weight: bold; color: #e94560; margin: 10px 0; }
-        .timer-display { font-size: 2.5rem; font-weight: bold; color: #e94560; margin: 10px 0; }
-        .info-text { font-size: 0.9rem; color: #ccc; }
+        .role-name { font-size: 1.6rem; font-weight: bold; color: #f1c40f; margin: 10px 0; }
+        .win-title { font-size: 2rem; font-weight: bold; color: #10b981; margin: 10px 0; text-shadow: 0 2px 10px rgba(16,185,129,0.4); }
+        .lose-title { font-size: 2rem; font-weight: bold; color: #ff4757; margin: 10px 0; text-shadow: 0 2px 10px rgba(255,71,87,0.4); }
+        .timer-display { font-size: 2.5rem; font-weight: bold; color: #ff4757; margin: 10px 0; font-family: monospace; }
+        .info-text { font-size: 0.9rem; color: #94a3b8; }
         .result-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.85rem; }
-        .result-table th, .result-table td { border: 1px solid #e94560; padding: 6px; }
-        .result-table th { background: #0f3460; }
-        .player-list-item { background: #0f3460; margin: 5px 0; padding: 8px; border-radius: 4px; border: 1px solid #334257; display: flex; justify-content: space-between; align-items: center; }
+        .result-table th, .result-table td { border: 1px solid #334155; padding: 8px; }
+        .result-table th { background: #0f172a; color: #f1c40f; }
+        .player-list-item { background: #0f172a; margin: 6px 0; padding: 10px 14px; border-radius: 8px; border: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
 
         .co-grid {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 12px;
             justify-content: center;
             margin: 15px 0;
         }
         .co-card {
-            background: #0f3460;
-            border: 1px solid #e94560;
-            border-radius: 8px;
-            padding: 10px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 12px;
             width: 280px;
             box-sizing: border-box;
             text-align: left;
         }
-        .co-card-name { font-weight: bold; color: #fff; margin-bottom: 5px; text-align: center; }
+        .co-card-name { font-weight: bold; color: #fff; margin-bottom: 8px; text-align: center; border-bottom: 1px solid #1e293b; padding-bottom: 4px; }
         
         .co-section {
             background: #16213e;
-            border: 1px solid #334257;
-            border-radius: 6px;
-            padding: 6px;
-            margin-top: 5px;
+            border: 1px solid #2a3b5c;
+            border-radius: 8px;
+            padding: 8px;
+            margin-top: 6px;
         }
-        .memo-label { font-size: 0.7rem; color: #aaa; margin-top: 4px; display: block; }
+        .memo-label { font-size: 0.75rem; color: #94a3b8; margin-top: 4px; display: block; }
         
-        .stats-box { background: #0f3460; border: 1px solid #4ecca3; padding: 10px; border-radius: 8px; margin-top: 15px; text-align: left; font-size: 0.85rem; }
-        .toggle-btn { background-color: #1f4068; border: 1px solid #4ecca3; font-size: 0.85rem; padding: 6px 12px; margin-bottom: 8px; }
+        .stats-box { background: #0f172a; border: 1px solid #10b981; padding: 14px; border-radius: 10px; margin-top: 15px; text-align: left; font-size: 0.85px; }
+        .toggle-btn { background: linear-gradient(135deg, #1e293b, #334155); border: 1px solid #10b981; font-size: 0.85rem; padding: 8px 16px; margin-bottom: 8px; color: #34d399; }
+        .toggle-btn:hover { background: #334155; }
 
         .role-badge {
             display: inline-flex;
@@ -144,73 +183,76 @@
         }
 
         .werewolf-camp-text {
-            color: #d32f2f !important;
+            color: #ff4757 !important;
             font-weight: bold;
         }
 
         .wolf-chat-box {
-            background: #0b132b;
-            border: 1px solid #d32f2f;
-            border-radius: 8px;
-            padding: 10px;
+            background: #0f172a;
+            border: 1px solid #ff4757;
+            border-radius: 10px;
+            padding: 12px;
             margin-top: 15px;
             text-align: left;
         }
         .wolf-chat-logs {
             height: 120px;
             overflow-y: auto;
-            border: 1px solid #334257;
-            padding: 6px;
+            border: 1px solid #334155;
+            padding: 8px;
             margin-bottom: 8px;
             background: #16213e;
             font-size: 0.85rem;
+            border-radius: 6px;
         }
         
         .memo-day-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 4px;
+            gap: 6px;
             margin-top: 6px;
         }
         .memo-day-box {
-            background: #0f3460;
-            padding: 4px;
-            border-radius: 4px;
+            background: #0f172a;
+            padding: 6px;
+            border-radius: 6px;
+            border: 1px solid #334155;
         }
 
         .history-box {
             background: #16213e;
-            border: 1px solid #4ecca3;
-            border-radius: 8px;
-            padding: 10px;
+            border: 1px solid #10b981;
+            border-radius: 10px;
+            padding: 12px;
             margin-top: 15px;
             text-align: left;
             font-size: 0.85rem;
         }
 
         .big-announce-box {
-            background: #0b132b;
-            border: 3px solid #e94560;
-            border-radius: 12px;
+            background: #0f172a;
+            border: 3px solid #ff4757;
+            border-radius: 14px;
             padding: 30px 15px;
             margin: 20px 0;
-            box-shadow: 0 0 20px rgba(233, 69, 96, 0.6);
+            box-shadow: 0 0 25px rgba(255, 71, 87, 0.4);
         }
         .big-announce-main {
             font-size: 1.6rem;
             font-weight: bold;
-            color: #f9ed69;
+            color: #f1c40f;
             margin-bottom: 15px;
             line-height: 1.4;
         }
         .big-announce-sub {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             font-weight: bold;
-            color: #ff6b6b;
+            color: #ff6b81;
             background: #16213e;
-            padding: 10px;
+            padding: 10px 16px;
             border-radius: 8px;
             display: inline-block;
+            border: 1px solid #334155;
         }
     </style>
 
@@ -228,12 +270,12 @@
         <h2>あなたの名前を入力</h2>
         <input type="text" id="my-name" placeholder="例: プレイヤー1" maxlength="10">
         
-        <div style="margin-top:20px; border-top:1px solid #334257; padding-top:20px;">
+        <div style="margin-top:20px; border-top:1px solid #334155; padding-top:20px;">
             <h3>部屋を作る（ホスト）</h3>
             <button onclick="createRoom()">新しい部屋を作成</button>
         </div>
 
-        <div style="margin-top:20px; border-top:1px solid #334257; padding-top:20px;">
+        <div style="margin-top:20px; border-top:1px solid #334155; padding-top:20px;">
             <h3>部屋に入る</h3>
             <input type="text" id="join-room-id" placeholder="4桁の部屋番号" maxlength="4">
             <br>
@@ -243,7 +285,7 @@
 
     <!-- 2. 待機部屋画面 -->
     <div id="screen-waiting" class="hidden">
-        <h2>部屋コード: <span id="display-room-id" style="color:#f9ed69;"></span></h2>
+        <h2>部屋コード: <span id="display-room-id" style="color:#f1c40f;"></span></h2>
         <p class="info-text">参加者にこの番号を伝えてください</p>
         
         <div class="card-box">
@@ -251,13 +293,13 @@
             <div id="waiting-player-list"></div>
         </div>
 
-        <div class="stats-box">
+        <div class="stats-box" style="font-size: 0.85rem;">
             <button class="toggle-btn" onclick="toggleStatsVisibility()">ルーム内戦績・勝率を表示する</button>
-            <div id="lobby-stats-content" class="hidden">戦績データはまだありません（ゲームを1回以上行うと集計されます）</div>
+            <div id="lobby-stats-content" class="hidden" style="margin-top: 10px;">戦績データはまだありません（ゲームを1回以上行うと集計されます）</div>
         </div>
 
         <div id="host-controls" class="hidden" style="margin-top: 15px;">
-            <div class="card-box" style="border-color:#f9ed69;">
+            <div class="card-box" style="border-color:#f1c40f;">
                 <h3>ゲームモード選択</h3>
                 <div class="setup-group">
                     <label>モード:</label>
@@ -270,7 +312,7 @@
             </div>
 
             <!-- ワンナイト人狼用設定 -->
-            <div id="setting-jinro-box" class="card-box" style="border-color:#f9ed69;">
+            <div id="setting-jinro-box" class="card-box" style="border-color:#f1c40f;">
                 <h3>役職カード設定 (余り2枚)</h3>
                 <p id="card-validation-msg" style="font-weight:bold; font-size:0.95rem;"></p>
                 <div class="setup-group"><label><span class="role-badge"><img src="jinrou.png"><span class="werewolf-camp-text">人狼</span></span>:</label><input type="number" id="cfg-werewolf" value="2" min="0" max="8" onchange="updateRoleSettings()"></div>
@@ -281,7 +323,7 @@
             </div>
 
             <!-- ワードウルフ用設定 -->
-            <div id="setting-wordwolf-box" class="card-box hidden" style="border-color:#f9ed69;">
+            <div id="setting-wordwolf-box" class="card-box hidden" style="border-color:#f1c40f;">
                 <h3>ワードウルフ設定</h3>
                 <div class="setup-group">
                     <label>人狼（ウルフ）の人数:</label>
@@ -297,7 +339,7 @@
             </div>
 
             <!-- 普通の人狼用設定 -->
-            <div id="setting-standard-box" class="card-box hidden" style="border-color:#f9ed69;">
+            <div id="setting-standard-box" class="card-box hidden" style="border-color:#f1c40f;">
                 <h3>普通の人狼 役職設定 (余りなし・ぴったり分配)</h3>
                 <p id="std-card-validation-msg" style="font-weight:bold; font-size:0.95rem;"></p>
                 <div class="setup-group"><label><span class="werewolf-camp-text">人狼</span>:</label><input type="number" id="std-cfg-werewolf" value="1" min="1" max="10" onchange="updateRoleSettings()"></div>
@@ -320,7 +362,7 @@
                 <label>昼の議論タイマー (分):</label>
                 <input type="number" id="timer-minutes" value="3" min="1" max="20" onchange="updateRoleSettings()">
             </div>
-            <!-- 夜タイマー設定（分単位） -->
+            <!-- 夜タイマー設定（普通の人狼のみ利用） -->
             <div id="night-timer-setting-group" class="setup-group hidden">
                 <label>夜の時間タイマー (分):</label>
                 <input type="number" id="timer-night-minutes" value="1" min="1" max="10" onchange="updateRoleSettings()">
@@ -438,10 +480,10 @@
 
     const roleDetails = {
         "村人": "特殊能力はありません。議論で人狼を見つけ出しましょう！",
-        "人狼": "仲間の人狼を確認し、夜時間に襲撃対象を選択できます。",
+        "人狼": "仲間の人狼を確認し、夜時間に選択できます。",
         "狂人": "人狼側の味方です（村人カウント）。誰が人狼かは分かりません。",
         "狂信者": "人狼側の味方です（村人カウント）。誰が人狼かを知ることができます。",
-        "占い師": "初日はランダムな〇（白）結果を獲得し、翌日以降は指定プレイヤーを占えます。",
+        "占い師": "プレイヤー一人か中央の2枚を占えます。",
         "霊媒師": "前日に追放された人物が〇（人狼以外）か●（人狼）かを確認できます。",
         "狩人": "夜時間に自分以外のプレイヤー1人を保護し、人狼の襲撃から守ります。",
         "怪盗": "誰か1人と役職を交換できます。"
@@ -501,6 +543,7 @@
             timerNightMinutes: 1,
             timerEndTime: null,
             nightTimerEndTime: null,
+            lastWordsEndTime: null,
             playerStats: {}
         };
 
@@ -547,6 +590,17 @@
                 appTitle.innerText = "人狼系ボードゲーム (普通の人狼)";
             } else {
                 appTitle.innerText = "人狼系ボードゲーム (ワンナイト人狼)";
+            }
+
+            if (isHost && data.status === "night_action" && data.gameMode !== "standard") {
+                let nightDone = data.nightDone || {};
+                let allDone = data.players.length > 0 && data.players.every(p => nightDone[p.id]);
+                if (allDone) {
+                    db.collection("rooms").doc(roomId).update({
+                        status: "day_discussion",
+                        timerEndTime: Date.now() + ((data.timerMinutes || 3) * 60 * 1000)
+                    });
+                }
             }
 
             renderRoomState(data);
@@ -601,26 +655,55 @@
 
     function renderLobbyStats(data) {
         const statsContainer = document.getElementById('lobby-stats-content');
-        const stats = data.playerStats || {};
-        const pIds = Object.keys(stats);
+        const currentMode = data.gameMode || "jinro";
+        const allStats = data.playerStats || {};
+        const modeStats = allStats[currentMode] || {};
+        const pIds = Object.keys(modeStats);
+
+        let modeNameStr = "ワンナイト人狼";
+        if (currentMode === "wordwolf") modeNameStr = "ワードウルフ";
+        else if (currentMode === "standard") modeNameStr = "普通の人狼";
 
         if(pIds.length === 0) {
-            statsContainer.innerHTML = `<p style="color:#ccc; margin:4px 0;">まだ対戦データがありません。</p>`;
+            statsContainer.innerHTML = `<p style="color:#94a3b8; margin:4px 0;">[${modeNameStr}] まだ対戦データがありません。</p>`;
             return;
         }
 
-        let html = "";
+        let html = `<p style="color:#f1c40f; margin:0 0 6px 0; font-weight:bold;">【${modeNameStr} モードの戦績詳細】</p>`;
         data.players.forEach(p => {
-            let pStat = stats[p.id];
+            let pStat = modeStats[p.id];
             if(!pStat) {
                 html += `<p style="margin:4px 0;"><b>👤 ${p.name}:</b> まだ対戦データなし</p>`;
                 return;
             }
 
-            let totalRate = pStat.totalPlayed > 0 ? Math.round((pStat.totalWon / pStat.totalPlayed) * 100) : 0;
-            html += `<div style="border-bottom:1px dashed #334257; padding-bottom:6px; margin-bottom:6px;">`;
-            html += `<b>👤 ${p.name}</b> (総試合: ${pStat.totalPlayed}回)<br>`;
-            html += `・勝率: <b>${totalRate}%</b> (${pStat.totalWon}/${pStat.totalPlayed})<br>`;
+            let totalPlayed = pStat.totalPlayed || 0;
+            let totalWon = pStat.totalWon || 0;
+            let totalRate = totalPlayed > 0 ? Math.round((totalWon / totalPlayed) * 100) : 0;
+
+            let villagerPlayed = pStat.villagerPlayed || 0;
+            let villagerWon = pStat.villagerWon || 0;
+            let villagerRate = villagerPlayed > 0 ? Math.round((villagerWon / villagerPlayed) * 100) : 0;
+
+            let wolfPlayed = pStat.wolfPlayed || 0;
+            let wolfWon = pStat.wolfWon || 0;
+            let wolfRate = wolfPlayed > 0 ? Math.round((wolfWon / wolfPlayed) * 100) : 0;
+
+            let roleDetailsStr = "";
+            let roleStats = pStat.roles || {};
+            Object.keys(roleStats).forEach(rName => {
+                let rData = roleStats[rName];
+                let rRate = rData.played > 0 ? Math.round((rData.won / rData.played) * 100) : 0;
+                roleDetailsStr += `&nbsp;&nbsp;・${rName}: ${rData.won}/${rData.played}勝 (${rRate}%)<br>`;
+            });
+
+            html += `<div style="border-bottom:1px dashed #334155; padding-bottom:6px; margin-bottom:6px;">`;
+            html += `<b>👤 ${p.name}</b><br>`;
+            html += `・全体戦績: <b>${totalWon}/${totalPlayed}勝 (${totalRate}%)</b><br>`;
+            html += `・村人陣営: ${villagerWon}/${villagerPlayed}勝 (${villagerRate}%) | 人狼陣営: ${wolfWon}/${wolfPlayed}勝 (${wolfRate}%)<br>`;
+            if(roleDetailsStr) {
+                html += `・役職別戦績:<br>${roleDetailsStr}`;
+            }
             html += `</div>`;
         });
 
@@ -646,12 +729,12 @@
         if(!msgElem || !btnElem) return true;
 
         if (currentTotal !== targetTotal) {
-            msgElem.style.color = "#ff6b6b";
+            msgElem.style.color = "#ff4757";
             msgElem.innerText = `役職数が不適です (現在: ${currentTotal}枚 / 必要: ${targetTotal}枚)`;
             btnElem.disabled = true;
             return false;
         } else {
-            msgElem.style.color = "#4ecca3";
+            msgElem.style.color = "#10b981";
             msgElem.innerText = `枚数OK (合計: ${currentTotal}枚)`;
             btnElem.disabled = false;
             return true;
@@ -678,12 +761,12 @@
         if(!msgElem || !btnElem) return true;
 
         if (currentTotal !== pCount) {
-            msgElem.style.color = "#ff6b6b";
+            msgElem.style.color = "#ff4757";
             msgElem.innerText = `役職数が不適です (現在: ${currentTotal}枚 / 参加人数ピッタリ ${pCount}枚必要)`;
             btnElem.disabled = true;
             return false;
         } else {
-            msgElem.style.color = "#4ecca3";
+            msgElem.style.color = "#10b981";
             msgElem.innerText = `枚数OK (合計: ${currentTotal}枚)`;
             btnElem.disabled = false;
             return true;
@@ -890,7 +973,7 @@
         if(data.status === "night_action") {
             title.innerText = mode === "wordwolf" ? "お題確認タイム" : `${data.dayCount || 1}日目の夜の時間`;
             
-            if (!window.nightTimerRunning) {
+            if (mode === "standard" && !window.nightTimerRunning) {
                 startNightTimerSync(data);
             }
 
@@ -905,7 +988,37 @@
             if (nightTimerInterval) { clearInterval(nightTimerInterval); nightTimerInterval = null; window.nightTimerRunning = false; }
         }
 
-        if(data.status === "last_words") {
+        if(data.status === "hanged_announce") {
+            lastRenderKey = "hanged_announce_" + (data.dayCount || 1);
+            title.innerText = "追放者発表";
+
+            let hangedP = data.lastHangedId ? data.players.find(p => p.id === data.lastHangedId) : null;
+            let announceMain = hangedP 
+                ? `📢 本日の処刑者は <span style="color:#f1c40f;">${hangedP.name}</span> さんでした` 
+                : `📢 本日の処刑者はいませんでした`;
+
+            document.getElementById('action-area').innerHTML = `
+                <div class="big-announce-box">
+                    <div class="big-announce-main">${announceMain}</div>
+                    <div class="big-announce-sub">🎙️ 遺言タイムへ移行します</div>
+                </div>
+                <p class="info-text">まもなく遺言タイムが始まります (3秒)</p>
+            `;
+
+            if(isHost && !window.hangedAnnounceTimerSet) {
+                window.hangedAnnounceTimerSet = true;
+                setTimeout(async () => {
+                    window.hangedAnnounceTimerSet = false;
+                    let freshData = (await db.collection("rooms").doc(roomId).get()).data();
+                    if(freshData.status === "hanged_announce") {
+                        await db.collection("rooms").doc(roomId).update({
+                            status: "last_words",
+                            lastWordsEndTime: Date.now() + 60000
+                        });
+                    }
+                }, 3000);
+            }
+        } else if(data.status === "last_words") {
             lastRenderKey = "last_words_" + (data.dayCount || 1);
             title.innerText = "遺言タイム";
             renderLastWordsPhase(data);
@@ -915,8 +1028,8 @@
 
             let hangedP = data.lastHangedId ? data.players.find(p => p.id === data.lastHangedId) : null;
             let announceMain = hangedP 
-                ? `📢 投票の結果 <span style="color:#f9ed69;">${hangedP.name}</span> さんが追放されました` 
-                : `📢 投票の結果 <span style="color:#4ecca3;">誰も追放されませんでした</span>`;
+                ? `📢 投票の結果 <span style="color:#f1c40f;">${hangedP.name}</span> さんが追放されました` 
+                : `📢 投票の結果 <span style="color:#10b981;">誰も追放されませんでした</span>`;
 
             document.getElementById('action-area').innerHTML = `
                 <div class="big-announce-box">
@@ -960,13 +1073,13 @@
 
             let vicP = data.lastNightVictimId ? data.players.find(p => p.id === data.lastNightVictimId) : null;
             let morningMain = vicP 
-                ? `☀️ 夜が明けると <span style="color:#e94560;">${vicP.name}</span> さんが無惨な姿で発見されました` 
-                : `☀️ 夜が明けると <span style="color:#4ecca3;">犠牲者はいませんでした</span>`;
+                ? `☀️ 夜が明けると <span style="color:#ff4757;">${vicP.name}</span> さんが無惨な姿で発見されました` 
+                : `☀️ 夜が明けると <span style="color:#10b981;">犠牲者はいませんでした</span>`;
 
             document.getElementById('action-area').innerHTML = `
-                <div class="big-announce-box" style="border-color:#4ecca3; box-shadow: 0 0 20px rgba(78, 204, 163, 0.6);">
+                <div class="big-announce-box" style="border-color:#10b981; box-shadow: 0 0 25px rgba(16, 185, 129, 0.4);">
                     <div class="big-announce-main">${morningMain}</div>
-                    <div class="big-announce-sub" style="color:#4ecca3;">🎙️ ミュートを解除してください</div>
+                    <div class="big-announce-sub" style="color:#10b981; border-color:#10b981;">🎙️ ミュートを解除してください</div>
                 </div>
                 <p class="info-text">まもなく昼の議論が始まります (3秒)</p>
             `;
@@ -981,7 +1094,7 @@
         } else if(data.status === "day_discussion") {
             myNightDoneLocal = false;
             selectedVoteTargetId = null;
-            title.innerText = `${data.dayCount || 1}日目の昼の議論タイム`;
+            title.innerText = mode === "standard" ? `${data.dayCount || 1}日目の昼の議論タイム` : "朝の議論タイム";
             if (!document.getElementById('timer')) {
                 startTimerSync(data);
             } else {
@@ -1003,7 +1116,7 @@
                 }
             }
         } else if(data.status === "wordwolf_guess") {
-            title.innerText = "お題推定フェーズ (1分)";
+            title.innerText = "お題推定フェイズ (1分)";
             renderWordWolfGuessPhase(data);
         } else if(data.status === "result") {
             lastRenderKey = "result_" + (data.dayCount || 1);
@@ -1130,7 +1243,7 @@
             let remSec = Math.max(0, Math.floor(((vState.handraiseEndTime || 0) - now) / 1000));
 
             if(!data.alivePlayers[myPlayerId]) {
-                area.innerHTML = `<p style="color:#e94560;">あなたは死亡しているため投票できません。</p><p class="info-text">生存プレイヤーの挙手・投票を待っています...</p>`;
+                area.innerHTML = `<p style="color:#ff4757;">あなたは死亡しているため投票できません。</p><p class="info-text">生存プレイヤーの挙手・投票を待っています...</p>`;
                 return;
             }
 
@@ -1142,11 +1255,11 @@
             `;
 
             if(myVote) {
-                html += `<p style="color:#4ecca3; font-weight:bold;">あなたの投票表明は完了しました。</p><p class="info-text">他のプレイヤーの挙手・投票を待っています...</p>`;
+                html += `<p style="color:#10b981; font-weight:bold;">あなたの投票表明は完了しました。</p><p class="info-text">他のプレイヤーの挙手・投票を待っています...</p>`;
             } else if(!myRaised) {
-                html += `<button id="raise-hand-btn" style="background-color:#4ecca3; color:#1a1a2e; font-weight:bold; font-size:1.2rem; padding:15px 30px;" onclick="raiseHand()">✋ 挙手する</button>`;
+                html += `<button id="raise-hand-btn" style="background:linear-gradient(135deg, #10b981, #059669); color:white; font-size:1.1rem; padding:15px 30px;" onclick="raiseHand()">✋ 挙手する</button>`;
             } else {
-                html += `<p style="color:#4ecca3; font-weight:bold;">挙手しました！順番を確定しています...</p>`;
+                html += `<p style="color:#10b981; font-weight:bold;">挙手しました！順番を確定しています...</p>`;
             }
             html += `</div></div>`;
             area.innerHTML = html;
@@ -1154,7 +1267,7 @@
         } else if(vState.phase === 'notice') {
             let speaker = data.players.find(p => p.id === vState.speakerId);
             area.innerHTML = `
-                <div style="font-size:1.8rem; color:#f9ed69; font-weight:bold; margin:30px 0;">
+                <div style="font-size:1.8rem; color:#f1c40f; font-weight:bold; margin:30px 0;">
                     ${speaker ? speaker.name : ''} さんが投票します
                 </div>
                 <p class="info-text">まもなく30秒間の投票理由時間が始まります...</p>
@@ -1193,12 +1306,12 @@
                         let isSel = (currentChoice === p.id);
                         html += `<button class="action-btn ${isSel ? 'selected-target' : ''}" onclick="selectStandardVoteChoice('${p.id}')">${p.name} に投票 ${isSel ? '✓ 選択中' : ''}</button><br>`;
                     });
-                    html += `<button style="background-color:#4ecca3; color:#1a1a2e; font-weight:bold; margin-top:15px;" onclick="finishSpeech()">投票表明を終える</button>`;
+                    html += `<button style="background:linear-gradient(135deg, #10b981, #059669); margin-top:15px;" onclick="finishSpeech()">投票表明を終える</button>`;
                 } else {
                     html += `<p class="info-text">${speaker ? speaker.name : ''} さんが投票理由を述べています...</p>`;
                 }
             } else {
-                html += `<p style="color:#e94560;">あなたは死亡しています。</p>`;
+                html += `<p style="color:#ff4757;">あなたは死亡しています。</p>`;
             }
 
             area.innerHTML = html;
@@ -1206,7 +1319,7 @@
         } else if(vState.phase === 'runoff_notice') {
             let runoffNames = (vState.runoffList || []).map(id => data.players.find(p => p.id === id)?.name).join(' と ');
             area.innerHTML = `
-                <div style="font-size:1.5rem; color:#f9ed69; font-weight:bold; margin:20px 0;">
+                <div style="font-size:1.5rem; color:#f1c40f; font-weight:bold; margin:20px 0;">
                     最多得票が同数でした。<br>${runoffNames} の決戦弁明を行います。
                 </div>
                 <p class="info-text">まもなく決戦弁明が始まります...</p>
@@ -1243,12 +1356,12 @@
             if(isAlive(data, myPlayerId)) {
                 if(isSpeaker) {
                     html += `<p class="info-text">1分間の弁明をどうぞ。終わったら「決戦弁明を終える」を押してください。</p>`;
-                    html += `<button style="background-color:#4ecca3; color:#1a1a2e; font-weight:bold; margin-top:15px;" onclick="finishRunoffSpeech()">決戦弁明を終える</button>`;
+                    html += `<button style="background:linear-gradient(135deg, #10b981, #059669); margin-top:15px;" onclick="finishRunoffSpeech()">決戦弁明を終える</button>`;
                 } else {
                     html += `<p class="info-text">${speaker ? speaker.name : ''} さんが弁明中です...</p>`;
                 }
             } else {
-                html += `<p style="color:#e94560;">あなたは死亡しています。</p>`;
+                html += `<p style="color:#ff4757;">あなたは死亡しています。</p>`;
             }
 
             area.innerHTML = html;
@@ -1258,9 +1371,9 @@
             let isRunoffTarget = vState.runoffList.includes(myPlayerId);
 
             if(!isAlive(data, myPlayerId)) {
-                html += `<p style="color:#e94560;">あなたは死亡しています。</p>`;
+                html += `<p style="color:#ff4757;">あなたは死亡しています。</p>`;
             } else if(isRunoffTarget) {
-                html += `<p style="color:#f9ed69;">あなたは決戦対象者のため、今回の再投票には参加できません。他のプレイヤーの投票を待っています...</p>`;
+                html += `<p style="color:#f1c40f;">あなたは決戦対象者のため、今回の再投票には参加できません。他のプレイヤーの投票を待っています...</p>`;
             } else {
                 let currentChoice = selectedVoteTargetId || (vState.votes && vState.votes[myPlayerId]);
                 if(!vState.votes || !vState.votes[myPlayerId]) {
@@ -1273,30 +1386,10 @@
                         }
                     });
                 } else {
-                    html += `<p style="color:#4ecca3;">投票完了しました。全員の投票を待っています...</p>`;
+                    html += `<p style="color:#10b981;">投票完了しました。全員の投票を待っています...</p>`;
                 }
             }
             area.innerHTML = html;
-        }
-    }
-
-    function updateVotingPhaseDynamic(data, vState) {
-        let timerElem = document.getElementById('shared-vote-timer');
-        if (timerElem && (vState.phase === 'handraise' || vState.phase === 'speaking' || vState.phase === 'runoff_speech')) {
-            let targetTime = vState.phase === 'handraise' ? vState.handraiseEndTime : vState.speechEndTime;
-            let remSec = Math.max(0, Math.floor(((targetTime || 0) - Date.now()) / 1000));
-            if (vState.phase === 'runoff_speech') {
-                let m = Math.floor(remSec / 60);
-                let s = remSec % 60;
-                timerElem.innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-            } else {
-                timerElem.innerText = `00:${String(remSec).padStart(2,'0')}`;
-            }
-        }
-
-        let votedCountSpan = document.getElementById('voted-count-span');
-        if (votedCountSpan && vState.phase === 'handraise' && vState.votes) {
-            votedCountSpan.innerText = Object.keys(vState.votes).length;
         }
     }
 
@@ -1593,9 +1686,8 @@
         };
 
         if(hangedId) {
-            updates.status = "last_words";
+            updates.status = "hanged_announce";
             updates.lastHangedId = hangedId;
-            updates.lastWordsEndTime = Date.now() + 60000;
         } else {
             let aliveObj = { ...data.alivePlayers };
             updates.status = "vote_announce_hold";
@@ -1616,7 +1708,7 @@
         const s = remSec % 60;
 
         let html = `
-            <div style="font-size:1.5rem; color:#e94560; font-weight:bold; margin-bottom:10px;">
+            <div style="font-size:1.5rem; color:#ff4757; font-weight:bold; margin-bottom:10px;">
                 📢 ${hangedP ? hangedP.name : ''} さんの遺言タイム
             </div>
             <div class="timer-display" id="last-words-timer">${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}</div>
@@ -1624,22 +1716,21 @@
 
         if(isTarget) {
             html += `<p class="info-text">追放が決定しました。1分間の遺言をどうぞ。終わったら「遺言を終える」を押してください。</p>`;
-            html += `<button style="background-color:#4ecca3; color:#1a1a2e; font-weight:bold; margin-top:15px;" onclick="finishLastWords()">遺言を終える</button>`;
+            html += `<button style="background:linear-gradient(135deg, #10b981, #059669); margin-top:15px;" onclick="finishLastWords()">遺言を終える</button>`;
         } else {
             html += `<p class="info-text">${hangedP ? hangedP.name : ''} さんが遺言を述べています...</p>`;
         }
 
         area.innerHTML = html;
 
-        if (isHost && !window.lastWordsTimerIntervalSet) {
-            window.lastWordsTimerIntervalSet = true;
+        if (!window.lastWordsSyncInterval) {
             if(window.lwInterval) clearInterval(window.lwInterval);
             window.lwInterval = setInterval(async () => {
-                let freshData = (await db.collection("rooms").doc(roomId).get()).data();
+                let freshData = localRoomData;
                 if(!freshData || freshData.status !== "last_words") {
                     clearInterval(window.lwInterval);
                     window.lwInterval = null;
-                    window.lastWordsTimerIntervalSet = false;
+                    window.lastWordsSyncInterval = false;
                     return;
                 }
                 let curRem = Math.max(0, Math.floor(((freshData.lastWordsEndTime || 0) - Date.now()) / 1000));
@@ -1650,19 +1741,20 @@
                     tElem.innerText = `${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
                 }
 
-                if(curRem <= 0) {
+                if(curRem <= 0 && isHost) {
                     clearInterval(window.lwInterval);
                     window.lwInterval = null;
-                    window.lastWordsTimerIntervalSet = false;
+                    window.lastWordsSyncInterval = false;
                     completeLastWordsTransition(freshData);
                 }
             }, 500);
+            window.lastWordsSyncInterval = true;
         }
     }
 
     async function finishLastWords() {
         if(window.lwInterval) { clearInterval(window.lwInterval); window.lwInterval = null; }
-        window.lastWordsTimerIntervalSet = false;
+        window.lastWordsSyncInterval = false;
         let freshData = (await db.collection("rooms").doc(roomId).get()).data();
         if(freshData && freshData.status === "last_words") {
             await completeLastWordsTransition(freshData);
@@ -1681,7 +1773,6 @@
         });
     }
 
-    /* 普通の人狼：夜の行動描画 */
     function renderStandardNight(data) {
         const area = document.getElementById('action-area');
         const myRole = data.finalRoles[myPlayerId];
@@ -1701,20 +1792,20 @@
             let key = "night_dead_" + day;
             if (lastRenderKey !== key) {
                 lastRenderKey = key;
-                area.innerHTML = `<p style="color:#e94560;">あなたは追放/犠牲になりました。観戦中...</p>
-                                  <div style="font-size:1.2rem; color:#f9ed69; margin-top:10px;">夜タイマー残り: <span id="night-timer">--:--</span></div>
+                area.innerHTML = `<p style="color:#ff4757;">あなたは追放/犠牲になりました。観戦中...</p>
+                                  <div style="font-size:1.2rem; color:#f1c40f; margin-top:10px;">夜タイマー残り: <span id="night-timer">--:--</span></div>
                                   ${renderVoteLogsHtml(data)}`;
             }
             return;
         }
 
         let html = `
-            <div style="border-bottom:1px solid #334257; padding-bottom:10px; margin-bottom:10px;">
+            <div style="border-bottom:1px solid #334155; padding-bottom:10px; margin-bottom:10px;">
                 <p>あなたの役職:</p>
                 <p class="role-name">${roleIcons[myRole] || myRole}</p>
                 <p class="info-text">${roleDetails[myRole] || ''}</p>
             </div>
-            <div style="font-size:1.2rem; color:#f9ed69; margin-bottom:15px;">夜タイマー残り: <span id="night-timer">--:--</span></div>
+            <div style="font-size:1.2rem; color:#f1c40f; margin-bottom:15px;">夜タイマー残り: <span id="night-timer">--:--</span></div>
         `;
 
         const livingOthers = data.players.filter(p => p.id !== myPlayerId && data.alivePlayers[p.id]);
@@ -1725,7 +1816,7 @@
                     let wolves = data.players.filter(p => data.finalRoles[p.id] === "人狼" && p.id !== myPlayerId);
                     let wNames = wolves.length > 0 ? wolves.map(w => w.name).join(', ') : 'なし（一匹狼）';
                     myNightActionResultText = `仲間の人狼: ${wNames}`;
-                    html += `<p>初日の夜です。襲撃はありません。</p><p style="color:#f9ed69;">仲間の人狼: <b>${wNames}</b></p>`;
+                    html += `<p>初日の夜です。襲撃はありません。</p><p style="color:#f1c40f;">仲間の人狼: <b>${wNames}</b></p>`;
                     html += renderWolfChatArea(data);
                     html += `<button onclick="completeNightAction('仲間の人狼: ' + '${wNames}')" style="margin-top:10px;">確認完了</button>`;
                 } else {
@@ -1733,7 +1824,7 @@
                     if(data.wolfReVote) {
                         let reCands = data.players.filter(p => data.wolfReVoteCandidates.includes(p.id));
                         let cNames = reCands.map(c => c.name).join(' と ');
-                        html += `<p style="color:#e94560;">${cNames} が襲撃対象になりました。どちらを襲撃しますか？</p>`;
+                        html += `<p style="color:#ff4757;">${cNames} が襲撃対象になりました。どちらを襲撃しますか？</p>`;
                         candidates = reCands;
                     } else {
                         html += `<p class="info-text">襲撃するプレイヤーを選択してください：</p>`;
@@ -1750,7 +1841,7 @@
                 let wolves = data.players.filter(p => data.finalRoles[p.id] === "人狼");
                 let wNames = wolves.map(w => w.name).join(', ');
                 myNightActionResultText = `人狼の正体: ${wNames}`;
-                html += `<p>人狼の正体: <b style="color:#d32f2f;">${wNames}</b></p>`;
+                html += `<p>人狼の正体: <b style="color:#ff4757;">${wNames}</b></p>`;
                 html += `<button onclick="completeNightAction('人狼の正体: ' + '${wNames}')">確認完了</button>`;
             } else if(myRole === "占い師") {
                 if(day === 1) {
@@ -1760,7 +1851,7 @@
                         myNightActionResultText = `${randP.name} ➔ 〇（白）`;
                         addRoleHistory(`1日目: ${randP.name} ➔ 〇（白）`);
                     }
-                    html += `<p style="color:#4ecca3; font-weight:bold; font-size:1.1rem;">初日占い結果: ${myNightActionResultText}</p>`;
+                    html += `<p style="color:#10b981; font-weight:bold; font-size:1.1rem;">初日占い結果: ${myNightActionResultText}</p>`;
                     html += `<button onclick="completeNightAction('初日占い: ' + '${myNightActionResultText}')">確認完了</button>`;
                 } else {
                     html += `<p class="info-text">占うプレイヤーを選択してください：</p>`;
@@ -1782,7 +1873,7 @@
                     let resStr = isW ? "●（人狼）" : "〇（人狼ではない）";
                     myNightActionResultText = `${hangedP.name} ➔ ${resStr}`;
                     addRoleHistory(`${day}日目: ${hangedP.name} ➔ ${resStr}`);
-                    html += `<p>前日追放された ${hangedP.name} は <b style="color:#f9ed69;">${resStr}</b> でした。</p>`;
+                    html += `<p>前日追放された ${hangedP.name} は <b style="color:#f1c40f;">${resStr}</b> でした。</p>`;
                     html += `<button onclick="completeNightAction('霊媒結果: ' + '${hangedP.name} ➔ ' + '${resStr}')">確認完了</button>`;
                 } else {
                     myNightActionResultText = "前日追放者なし";
@@ -1811,8 +1902,8 @@
             }
         } else {
             html += `
-                <div style="background:#0f3460; border:1px solid #4ecca3; padding:15px; border-radius:8px; margin-top:10px;">
-                    <p style="color:#4ecca3; font-weight:bold; margin-top:0;">✅ 夜の確認・行動が完了しています</p>
+                <div style="background:#0f172a; border:1px solid #10b981; padding:15px; border-radius:8px; margin-top:10px;">
+                    <p style="color:#10b981; font-weight:bold; margin-top:0;">✅ 夜の確認・行動が完了しています</p>
                     <p style="margin:4px 0;"><b>あなたの行動結果:</b> ${myNightActionResultText || '確認済み'}</p>
                 </div>
             `;
@@ -1837,7 +1928,7 @@
         let listItems = myRoleHistory.map(h => `<li style="margin:3px 0;">${h}</li>`).join('');
         return `
             <div class="history-box">
-                <p style="margin:0 0 6px 0; font-weight:bold; color:#4ecca3;">📜 これまでの占い・霊媒履歴</p>
+                <p style="margin:0 0 6px 0; font-weight:bold; color:#10b981;">📜 これまでの占い・霊媒履歴</p>
                 <ul style="margin:0; padding-left:20px;">${listItems}</ul>
             </div>
         `;
@@ -1848,19 +1939,19 @@
         if (logs.length === 0) return "";
 
         let logsHtml = logs.map(l => {
-            let hangedMsg = l.hangedName ? `<span style="color:#e94560; font-weight:bold;">${l.hangedName} さんが追放されました</span>` : `<span style="color:#4ecca3;">誰も追放されませんでした</span>`;
+            let hangedMsg = l.hangedName ? `<span style="color:#ff4757; font-weight:bold;">${l.hangedName} さんが追放されました</span>` : `<span style="color:#10b981;">誰も追放されませんでした</span>`;
             let detailsStr = l.details.map(d => `${d.voterName} ➔ ${d.targetName}`).join(', ');
             return `
-                <div style="border-bottom:1px dashed #334257; padding-bottom:6px; margin-bottom:6px;">
+                <div style="border-bottom:1px dashed #334155; padding-bottom:6px; margin-bottom:6px;">
                     <b>【${l.day}日目 投票結果】</b>: ${hangedMsg}<br>
-                    <span style="font-size:0.75rem; color:#aaa;">投票内訳: ${detailsStr}</span>
+                    <span style="font-size:0.75rem; color:#94a3b8;">投票内訳: ${detailsStr}</span>
                 </div>
             `;
         }).join('');
 
         return `
-            <div class="history-box" style="border-color:#f9ed69;">
-                <p style="margin:0 0 6px 0; font-weight:bold; color:#f9ed69;">🗳️ これまでの投票履歴</p>
+            <div class="history-box" style="border-color:#f1c40f;">
+                <p style="margin:0 0 6px 0; font-weight:bold; color:#f1c40f;">🗳️ これまでの投票履歴</p>
                 ${logsHtml}
             </div>
         `;
@@ -1871,7 +1962,7 @@
         let logHtml = logs.map(l => `<div><b>${l.sender}:</b> ${l.msg}</div>`).join('');
         return `
             <div class="wolf-chat-box">
-                <p style="margin:2px 0; font-size:0.8rem; color:#d32f2f; font-weight:bold;">人狼専用リアルタイムチャット</p>
+                <p style="margin:2px 0; font-size:0.8rem; color:#ff4757; font-weight:bold;">人狼専用リアルタイムチャット</p>
                 <div class="wolf-chat-logs" id="wolf-chat-logs">${logHtml}</div>
                 <input type="text" id="wolf-chat-input" placeholder="メッセージを入力" style="width:70%;">
                 <button onclick="sendWolfChat()" style="padding:6px 10px; font-size:0.8rem;">送信</button>
@@ -1932,14 +2023,25 @@
             roleExplanation = '自分の役職は非表示設定です。自分が多数派なのか少数派（ウルフ）なのか会話から探りましょう！';
         }
 
+        let isDone = myNightDoneLocal || (data.nightDone && data.nightDone[myPlayerId]);
         let html = `
-            <div style="border-bottom:1px solid #334257; padding-bottom:10px; margin-bottom:10px;">
+            <div style="border-bottom:1px solid #334155; padding-bottom:10px; margin-bottom:10px;">
                 <p>あなたに配られたお題:</p>
-                <p class="role-name" style="color:#f9ed69; font-size:2rem;">${wwWord}</p>
+                <p class="role-name" style="color:#f1c40f; font-size:2rem;">${wwWord}</p>
                 <p class="info-text">${roleExplanation}</p>
             </div>
-            <button onclick="completeNightAction('お題: ' + '${wwWord}')">確認完了</button>
         `;
+
+        if(!isDone) {
+            html += `<button onclick="completeNightAction('お題: ' + '${wwWord}')">確認完了</button>`;
+        } else {
+            html += `
+                <div style="background:#0f172a; border:1px solid #10b981; padding:15px; border-radius:8px; margin-top:10px;">
+                    <p style="color:#10b981; font-weight:bold; margin-top:0;">✅ 確認が完了しています</p>
+                </div>
+                <p class="info-text" style="margin-top:15px;">全員の確認完了を待っています...</p>
+            `;
+        }
         area.innerHTML = html;
     }
 
@@ -1948,93 +2050,119 @@
         const myRole = data.initialRoles[myPlayerId];
         const players = data.players.filter(p => p.id !== myPlayerId);
         const displayMyRole = roleIcons[myRole] || myRole;
+        let isDone = myNightDoneLocal || (data.nightDone && data.nightDone[myPlayerId]);
 
         let html = `
-            <div style="border-bottom:1px solid #334257; padding-bottom:10px; margin-bottom:10px;">
+            <div style="border-bottom:1px solid #334155; padding-bottom:10px; margin-bottom:10px;">
                 <p>あなたの初期役職:</p>
                 <p class="role-name">${displayMyRole}</p>
                 <p class="info-text">${roleDetails[myRole] || ''}</p>
             </div>
         `;
 
-        if(myRole === "占い師") {
-            html += `<p class="info-text">占い師の能力対象を選んでください：</p>`;
-            players.forEach(p => {
-                let isSel = (selectedVoteTargetId === p.id);
-                html += `<button class="action-btn ${isSel ? 'selected-target' : ''}" onclick="executeOnlineSeer('${p.id}', '${p.name}')">${p.name} を占う ${isSel ? '✓ 選択中' : ''}</button><br>`;
-            });
-            html += `<button class="action-btn" style="border-color:#f9ed69;" onclick="executeOnlineSeerCentral()">中央の2枚を占う</button>`;
-        } else if(myRole === "怪盗") {
-            html += `<p class="info-text">怪盗の能力対象を選んでください：</p>`;
-            players.forEach(p => {
-                let isSel = (selectedVoteTargetId === p.id);
-                html += `<button class="action-btn ${isSel ? 'selected-target' : ''}" onclick="executeOnlineThief('${p.id}', '${p.name}')">${p.name} と交換 ${isSel ? '✓ 選択中' : ''}</button><br>`;
-            });
-            html += `<button class="action-btn" style="border-color:#aaa;" onclick="completeNightAction('交換しませんでした')">交換しない</button>`;
-        } else if(myRole === "人狼") {
-            let wolves = data.players.filter(p => data.initialRoles[p.id] === "人狼" && p.id !== myPlayerId);
-            if(wolves.length > 0) {
-                let wNames = wolves.map(w => w.name).join(', ');
-                myNightActionResultText = `仲間の人狼: ${wNames}`;
-                html += `
-                    <div style="margin: 10px 0;">
-                        <img src="jinrou.png" style="height: 96px; object-fit: contain; display: block; margin: 0 auto 6px auto;">
-                        <p style="margin:0; font-size:0.95rem; color:#f9ed69;">仲間の人狼: <b>${wNames}</b></p>
-                    </div>
-                `;
+        if(!isDone) {
+            if(myRole === "占い師") {
+                html += `<p class="info-text">占い師の能力対象を選んでください：</p>`;
+                players.forEach(p => {
+                    let isSel = (selectedVoteTargetId === p.id);
+                    let disabledAttr = myNightActionResultText ? 'disabled style="opacity:0.6;"' : '';
+                    html += `<button class="action-btn ${isSel ? 'selected-target' : ''}" ${disabledAttr} onclick="executeOnlineSeer('${p.id}', '${p.name}')">${p.name} を占う ${isSel ? '✓ 選択中' : ''}</button><br>`;
+                });
+                let centralDisabled = myNightActionResultText ? 'disabled style="opacity:0.6;"' : '';
+                html += `<button class="action-btn" ${centralDisabled} style="border-color:#f1c40f;" onclick="executeOnlineSeerCentral()">中央の2枚を占う</button>`;
+            } else if(myRole === "怪盗") {
+                html += `<p class="info-text">怪盗の能力対象を選んでください：</p>`;
+                players.forEach(p => {
+                    let isSel = (selectedVoteTargetId === p.id);
+                    let disabledAttr = myNightActionResultText ? 'disabled style="opacity:0.6;"' : '';
+                    html += `<button class="action-btn ${isSel ? 'selected-target' : ''}" ${disabledAttr} onclick="executeOnlineThief('${p.id}', '${p.name}')">${p.name} と交換 ${isSel ? '✓ 選択中' : ''}</button><br>`;
+                });
+                let noneDisabled = myNightActionResultText ? 'disabled style="opacity:0.6;"' : '';
+                html += `<button class="action-btn" ${noneDisabled} style="border-color:#94a3b8;" onclick="executeOnlineThiefNone()">交換しない</button>`;
+            } else if(myRole === "人狼") {
+                let wolves = data.players.filter(p => data.initialRoles[p.id] === "人狼" && p.id !== myPlayerId);
+                if(wolves.length > 0) {
+                    let wNames = wolves.map(w => w.name).join(', ');
+                    myNightActionResultText = `仲間の人狼: ${wNames}`;
+                    html += `
+                        <div style="margin: 10px 0;">
+                            <img src="jinrou.png" style="height: 96px; object-fit: contain; display: block; margin: 0 auto 6px auto;">
+                            <p style="margin:0; font-size:0.95rem; color:#f1c40f;">仲間の人狼: <b>${wNames}</b></p>
+                        </div>
+                    `;
+                } else {
+                    myNightActionResultText = `仲間の人狼はいません`;
+                    html += `
+                        <div style="margin: 10px 0;">
+                            <img src="jinrou.png" style="height: 96px; object-fit: contain; display: block; margin: 0 auto 6px auto;">
+                            <p style="margin:0; font-size:0.95rem; color:#94a3b8;">仲間の人狼はいません（一匹狼）</p>
+                        </div>
+                    `;
+                }
+                html += `<button onclick="completeNightAction('${myNightActionResultText}')" style="margin-top:10px;">確認・行動完了</button>`;
             } else {
-                myNightActionResultText = `仲間の人狼はいません`;
+                myNightActionResultText = "能力行使なし";
+                html += `<p class="info-text">この役職に夜の特殊能力はありません。</p>`;
+                html += `<button onclick="completeNightAction('能力行使なし')" style="margin-top:10px;">確認完了</button>`;
+            }
+
+            if ((myRole === "占い師" || myRole === "怪盗") && myNightActionResultText) {
                 html += `
-                    <div style="margin: 10px 0;">
-                        <img src="jinrou.png" style="height: 96px; object-fit: contain; display: block; margin: 0 auto 6px auto;">
-                        <p style="margin:0; font-size:0.95rem; color:#ccc;">仲間の人狼はいません（一匹狼）</p>
+                    <div style="background:#0f172a; border:1px solid #10b981; padding:12px; border-radius:8px; margin:15px 0;">
+                        <p style="margin:0 0 6px 0; color:#10b981; font-weight:bold;">🔍 選択結果:</p>
+                        <p style="margin:0; font-size:1.05rem; color:#f1c40f;">${myNightActionResultText}</p>
                     </div>
+                    <button onclick="completeNightAction('${myNightActionResultText}')" style="background:linear-gradient(135deg, #10b981, #059669); font-size:1.1rem; padding:12px 24px; margin-top:10px;">確認しました（昼へ進む）</button>
                 `;
             }
-            html += `<button onclick="completeNightAction('${myNightActionResultText}')" style="margin-top:10px;">確認・行動完了</button>`;
         } else {
-            myNightActionResultText = "能力行使なし";
-            html += `<p class="info-text">この役職に夜の特殊能力はありません。</p>`;
-            html += `<button onclick="completeNightAction('能力行使なし')" style="margin-top:10px;">確認完了</button>`;
+            html += `
+                <div style="background:#0f172a; border:1px solid #10b981; padding:15px; border-radius:8px; margin-top:10px;">
+                    <p style="color:#10b981; font-weight:bold; margin-top:0;">✅ 夜の確認・行動が完了しています</p>
+                    <p style="margin:4px 0;"><b>あなたの行動結果:</b> ${myNightActionResultText || '確認済み'}</p>
+                </div>
+                <p class="info-text" style="margin-top:15px;">全員の確認完了を待っています...</p>
+            `;
         }
 
         area.innerHTML = html;
     }
 
     async function executeOnlineSeer(targetId, targetName) {
-        if(myNightDoneLocal) return;
+        if(myNightDoneLocal || myNightActionResultText) return;
         selectedVoteTargetId = targetId;
         const role = localRoomData.initialRoles[targetId];
-        const displayRole = roleIcons[role] || role;
-        myNightActionResultText = `${targetName} ➔ ${displayRole}`;
+        const displayRoleName = role;
+        myNightActionResultText = `${targetName} ➔ ${displayRoleName}`;
         renderNightActionsHub(localRoomData);
-        setTimeout(() => completeNightAction(`占い結果: ${targetName} ➔ ${displayRole}`), 300);
     }
 
     async function executeOnlineSeerCentral() {
-        if(myNightDoneLocal) return;
+        if(myNightDoneLocal || myNightActionResultText) return;
         const c = localRoomData.centralCards;
-        const displayC0 = roleIcons[c[0]] || c[0];
-        const displayC1 = roleIcons[c[1]] || c[1];
-        myNightActionResultText = `中央2枚 ➔ ${displayC0} と ${displayC1}`;
-        await completeNightAction(`中央占い: ${displayC0} / ${displayC1}`);
+        myNightActionResultText = `中央2枚 ➔ ${c[0]} と ${c[1]}`;
+        renderNightActionsHub(localRoomData);
     }
 
     async function executeOnlineThief(targetId, targetName) {
-        if(myNightDoneLocal) return;
+        if(myNightDoneLocal || myNightActionResultText) return;
         selectedVoteTargetId = targetId;
-        let finalRoles = localRoomData.finalRoles;
+        let finalRoles = { ...(localRoomData.finalRoles || {}) };
         const targetRole = finalRoles[targetId];
-        const displayTargetRole = roleIcons[targetRole] || targetRole;
         
         finalRoles[myPlayerId] = targetRole;
         finalRoles[targetId] = "怪盗";
 
-        myNightActionResultText = `${targetName} と交換 ➔ ${displayTargetRole}`;
+        myNightActionResultText = `${targetName} から「${targetRole}」を盗みました！`;
 
         await db.collection("rooms").doc(roomId).update({ finalRoles: finalRoles });
         renderNightActionsHub(localRoomData);
-        setTimeout(() => completeNightAction(`怪盗結果: ${targetName}と交換`), 300);
+    }
+
+    async function executeOnlineThiefNone() {
+        if(myNightDoneLocal || myNightActionResultText) return;
+        myNightActionResultText = "誰とも交換しませんでした";
+        renderNightActionsHub(localRoomData);
     }
 
     async function completeNightAction(customText) {
@@ -2120,6 +2248,14 @@
         data.players.forEach(p => {
             let memo = personalMemos[p.id] || { 
                 coRole: "未CO", 
+                coRole2: "なし",
+                seerMode: "player",
+                seerTarget: "",
+                seerResult: "",
+                seerCentral1: "",
+                seerCentral2: "",
+                thiefTarget: "",
+                thiefResult: "",
                 d1_target: "", d1_res: "", 
                 d2_target: "", d2_res: "",
                 d3_target: "", d3_res: "",
@@ -2145,7 +2281,7 @@
 
                         return `
                             <div class="memo-day-box">
-                                <span class="memo-label" style="color:#f9ed69;">${d}日目</span>
+                                <span class="memo-label" style="color:#f1c40f;">${d}日目</span>
                                 <select style="font-size:0.75rem; padding:2px;" onchange="updateMemoField('${p.id}', '${tKey}', this.value)"><option value="">対象</option>${targetOpts}</select>
                                 <select style="font-size:0.75rem; padding:2px; margin-top:2px;" onchange="updateMemoField('${p.id}', '${rKey}', this.value)"><option value="">結果</option>${resOpts}</select>
                             </div>
@@ -2161,7 +2297,7 @@
 
                         return `
                             <div class="memo-day-box">
-                                <span class="memo-label" style="color:#4ecca3;">${d}日目護衛</span>
+                                <span class="memo-label" style="color:#10b981;">${d}日目護衛</span>
                                 <select style="font-size:0.75rem; padding:2px; margin-top:2px;" onchange="updateMemoField('${p.id}', '${tKey}', this.value)"><option value="">対象</option>${targetOpts}</select>
                             </div>
                         `;
@@ -2172,6 +2308,72 @@
             } else {
                 let rList = ["未CO", "村人", "占い師", "怪盗", "狂人", "人狼"];
                 roleOptions = rList.map(r => `<option value="${r}" ${memo.coRole === r ? 'selected' : ''}>${roleIcons[r] || r}</option>`).join('');
+                
+                let rList2 = ["なし", "村人", "占い師", "怪盗", "狂人", "人狼"];
+                let roleOptions2 = rList2.map(r => `<option value="${r}" ${memo.coRole2 === r ? 'selected' : ''}>${r === 'なし' ? 'スライドなし' : (roleIcons[r] || r)}</option>`).join('');
+
+                let activeSeerCO = (memo.coRole === "占い師" || memo.coRole2 === "占い師");
+                let activeThiefCO = (memo.coRole === "怪盗" || memo.coRole2 === "怪盗");
+
+                if(activeSeerCO) {
+                    let seerMode = memo.seerMode || "player";
+                    let targetOpts = data.players.filter(o => o.id !== p.id).map(o => `<option value="${o.name}" ${memo.seerTarget === o.name ? 'selected' : ''}>${o.name}</option>`).join('');
+                    let resOpts = rList.filter(r => r !== "未CO").map(r => `<option value="${r}" ${memo.seerResult === r ? 'selected' : ''}>${r}</option>`).join('');
+                    let centralOpts1 = rList.filter(r => r !== "未CO").map(r => `<option value="${r}" ${memo.seerCentral1 === r ? 'selected' : ''}>${r}</option>`).join('');
+                    let centralOpts2 = rList.filter(r => r !== "未CO").map(r => `<option value="${r}" ${memo.seerCentral2 === r ? 'selected' : ''}>${r}</option>`).join('');
+
+                    extraInputs += `
+                        <div class="co-section" style="border-color:#f1c40f;">
+                            <span class="memo-label" style="color:#f1c40f; font-weight:bold;">🔮 占い結果</span>
+                            <select style="font-size:0.75rem; padding:2px; margin-bottom:4px;" onchange="updateMemoField('${p.id}', 'seerMode', this.value)">
+                                <option value="player" ${seerMode === 'player' ? 'selected' : ''}>プレイヤーを占った</option>
+                                <option value="central" ${seerMode === 'central' ? 'selected' : ''}>中央2枚を占った</option>
+                            </select>
+                            ${seerMode === 'player' ? `
+                                <div style="display:flex; gap:2px;">
+                                    <select style="font-size:0.75rem; padding:2px;" onchange="updateMemoField('${p.id}', 'seerTarget', this.value)"><option value="">対象</option>${targetOpts}</select>
+                                    <select style="font-size:0.75rem; padding:2px;" onchange="updateMemoField('${p.id}', 'seerResult', this.value)"><option value="">役職</option>${resOpts}</select>
+                                </div>
+                            ` : `
+                                <div style="display:flex; gap:2px;">
+                                    <select style="font-size:0.75rem; padding:2px;" onchange="updateMemoField('${p.id}', 'seerCentral1', this.value)"><option value="">1枚目</option>${centralOpts1}</select>
+                                    <select style="font-size:0.75rem; padding:2px;" onchange="updateMemoField('${p.id}', 'seerCentral2', this.value)"><option value="">2枚目</option>${centralOpts2}</select>
+                                </div>
+                            `}
+                        </div>
+                    `;
+                }
+
+                if(activeThiefCO) {
+                    let targetOpts = data.players.filter(o => o.id !== p.id).map(o => `<option value="${o.name}" ${memo.thiefTarget === o.name ? 'selected' : ''}>${o.name}</option>`).join('');
+                    let resOpts = rList.filter(r => r !== "未CO").map(r => `<option value="${r}" ${memo.thiefResult === r ? 'selected' : ''}>${r}</option>`).join('');
+
+                    extraInputs += `
+                        <div class="co-section" style="border-color:#10b981;">
+                            <span class="memo-label" style="color:#10b981; font-weight:bold;">🕵️ 怪盗結果</span>
+                            <div style="display:flex; gap:2px;">
+                                <select style="font-size:0.75rem; padding:2px;" onchange="updateMemoField('${p.id}', 'thiefTarget', this.value)"><option value="">交換対象</option>${targetOpts}</select>
+                                <select style="font-size:0.75rem; padding:2px;" onchange="updateMemoField('${p.id}', 'thiefResult', this.value)"><option value="">奪った役職</option>${resOpts}</select>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                memoCardsHtml += `
+                    <div class="co-card">
+                        <div class="co-card-name">${p.name} ${!data.alivePlayers[p.id] ? '(死亡)' : ''}</div>
+                        
+                        <div class="co-section">
+                            <span class="memo-label" style="color:#f1c40f; font-weight:bold;">初手 CO</span>
+                            <select onchange="updateMemoField('${p.id}', 'coRole', this.value)">${roleOptions}</select>
+                            
+                            <span class="memo-label" style="color:#ff4757; font-weight:bold; margin-top:6px;">スライド CO</span>
+                            <select onchange="updateMemoField('${p.id}', 'coRole2', this.value)">${roleOptions2}</select>
+                        </div>
+                        ${extraInputs}
+                    </div>
+                `;
+                return;
             }
 
             memoCardsHtml += `
@@ -2179,7 +2381,7 @@
                     <div class="co-card-name">${p.name} ${!data.alivePlayers[p.id] ? '(死亡)' : ''}</div>
                     
                     <div class="co-section">
-                        <span class="memo-label" style="color:#f9ed69; font-weight:bold;">CO役職</span>
+                        <span class="memo-label" style="color:#f1c40f; font-weight:bold;">CO役職</span>
                         <select onchange="updateMemoRoleSingle('${p.id}', this.value)">${roleOptions}</select>
                         ${extraInputs}
                     </div>
@@ -2206,15 +2408,15 @@
         const deckListStr = mode === "wordwolf" ? (data.allDeck || []).join(' / ') : (data.allDeck || []).map(r => roleIcons[r] || r).join(' / ');
 
         area.innerHTML = `
-            <p><b>朝の議論タイム</b></p>
+            <p><b>${mode === "standard" ? `${data.dayCount || 1}日目の昼の議論タイム` : "朝の議論タイム"}</b></p>
             <div class="timer-display" id="timer">--:--</div>
 
             <div id="memo-grid-container">${buildMemoGridHtml(data)}</div>
 
             <div class="info-card">
-                <p style="margin:4px 0;">👤 <b>あなたのお題・役職:</b> <span style="color:#f9ed69; font-weight:bold;">${displayMyInitialRole}</span></p>
-                <p style="margin:4px 0;">🔍 <b>確認情報:</b> <span style="color:#4ecca3; font-weight:bold;">${myNightActionResultText || 'なし'}</span></p>
-                ${mode === 'jinro' ? `<p style="margin:4px 0; border-top:1px dashed #555; padding-top:4px;">🃏 <b>全体で使用中の役職リスト:</b><br><span style="color:#ccc;">${deckListStr}</span></p>` : ''}
+                <p style="margin:4px 0;">👤 <b>あなたのお題・役職:</b> <span style="color:#f1c40f; font-weight:bold;">${displayMyInitialRole}</span></p>
+                <p style="margin:4px 0;">🔍 <b>確認情報（夜の行動結果）:</b> <span style="color:#10b981; font-weight:bold;">${myNightActionResultText || 'なし'}</span></p>
+                ${mode === 'jinro' ? `<p style="margin:4px 0; border-top:1px dashed #334155; padding-top:4px;">🃏 <b>全体で使用中の役職リスト:</b><br><span style="color:#94a3b8;">${deckListStr}</span></p>` : ''}
             </div>
 
             ${renderVoteLogsHtml(data)}
@@ -2253,7 +2455,9 @@
     }
 
     function updateMemoField(playerId, field, value) {
-        if(!personalMemos[playerId]) personalMemos[playerId] = { coRole: "未CO" };
+        if(!personalMemos[playerId]) personalMemos[playerId] = { 
+            coRole: "未CO", coRole2: "なし", seerMode: "player", seerTarget: "", seerResult: "", seerCentral1: "", seerCentral2: "", thiefTarget: "", thiefResult: "" 
+        };
         personalMemos[playerId][field] = value;
         renderMemoGridOnly();
     }
@@ -2285,7 +2489,7 @@
         const mode = data.gameMode || "jinro";
         
         if(!data.alivePlayers[myPlayerId]) {
-            area.innerHTML = `<p style="color:#e94560;">あなたは死亡しているため投票権がありません。</p><p class="info-text">全員の投票が揃うまでお待ちください...</p>`;
+            area.innerHTML = `<p style="color:#ff4757;">あなたは死亡しているため投票権がありません。</p><p class="info-text">全員の投票が揃うまでお待ちください...</p>`;
             return;
         }
 
@@ -2298,7 +2502,7 @@
         });
         if(mode === 'jinro') {
             let isSel = (currentVote === 'none');
-            html += `<button class="action-btn ${isSel ? 'selected-target' : ''}" style="border-color:#f9ed69;" onclick="submitVote('none')">平和村を願う ${isSel ? '✓ 選択中' : ''}</button>`;
+            html += `<button class="action-btn ${isSel ? 'selected-target' : ''}" style="border-color:#f1c40f;" onclick="submitVote('none')">平和村を願う ${isSel ? '✓ 選択中' : ''}</button>`;
         }
         area.innerHTML = html;
     }
@@ -2319,28 +2523,8 @@
         if(Object.keys(votes).length === livingPlayers.length) {
             lastRenderKey = "";
             if(mode === "wordwolf") {
-                let voteCounts = {};
-                freshData.players.forEach(p => voteCounts[p.id] = 0);
-                Object.values(votes).forEach(t => { if(voteCounts[t] !== undefined) voteCounts[t]++; });
-
-                let maxVotes = 0;
-                Object.values(voteCounts).forEach(c => { if(c > maxVotes) maxVotes = c; });
-
-                let mostVotedIds = [];
-                Object.keys(voteCounts).forEach(id => {
-                    if (voteCounts[id] === maxVotes) mostVotedIds.push(id);
-                });
-
-                let wolfIds = freshData.players.filter(p => freshData.initialRoles[p.id] === "人狼").map(p => p.id);
-                let wolfVoted = mostVotedIds.some(id => wolfIds.includes(id));
-
-                if(wolfVoted) {
-                    updateObj["status"] = "wordwolf_guess";
-                    updateObj["timerEndTime"] = Date.now() + (60 * 1000);
-                } else {
-                    updateObj["status"] = "result";
-                    updateObj["playerStats"] = calculateWordWolfResults(freshData, "wolf_win");
-                }
+                updateObj["status"] = "wordwolf_guess";
+                updateObj["timerEndTime"] = Date.now() + (60 * 1000);
             } else {
                 updateObj["status"] = "result";
                 updateObj["playerStats"] = calculateGameResults(freshData, votes);
@@ -2370,17 +2554,31 @@
 
     function calculateStandardResults(data, winState) {
         let playerStats = JSON.parse(JSON.stringify(data.playerStats || {}));
+        if(!playerStats["standard"]) playerStats["standard"] = {};
 
         data.players.forEach(p => {
             const role = data.finalRoles[p.id];
             let isWolfCamp = (role === "人狼" || role === "狂人" || role === "狂信者");
             let isWon = (winState === "wolf_win") ? isWolfCamp : !isWolfCamp;
 
-            if(!playerStats[p.id]) {
-                playerStats[p.id] = { totalPlayed: 0, totalWon: 0 };
+            if(!playerStats["standard"][p.id]) {
+                playerStats["standard"][p.id] = { totalPlayed: 0, totalWon: 0, villagerPlayed: 0, villagerWon: 0, wolfPlayed: 0, wolfWon: 0, roles: {} };
             }
-            playerStats[p.id].totalPlayed++;
-            if(isWon) playerStats[p.id].totalWon++;
+            let pStat = playerStats["standard"][p.id];
+            pStat.totalPlayed++;
+            if(isWon) pStat.totalWon++;
+
+            if(isWolfCamp) {
+                pStat.wolfPlayed++;
+                if(isWon) pStat.wolfWon++;
+            } else {
+                pStat.villagerPlayed++;
+                if(isWon) pStat.villagerWon++;
+            }
+
+            if(!pStat.roles[role]) pStat.roles[role] = { played: 0, won: 0 };
+            pStat.roles[role].played++;
+            if(isWon) pStat.roles[role].won++;
         });
 
         return playerStats;
@@ -2391,33 +2589,59 @@
         const area = document.getElementById('action-area');
         let wolfIds = data.players.filter(p => data.initialRoles[p.id] === "人狼").map(p => p.id);
         let wolfNames = data.players.filter(p => wolfIds.includes(p.id)).map(p => p.name).join(', ');
-        let civilianWord = data.wordWolfData.civilianWord;
+        
+        let isMyWolf = wolfIds.includes(myPlayerId);
+
+        let voteCounts = {};
+        data.players.forEach(p => voteCounts[p.id] = 0);
+        Object.values(data.votes || {}).forEach(t => { if(t !== 'none' && voteCounts[t] !== undefined) voteCounts[t]++; });
+        let maxVotes = 0;
+        Object.values(voteCounts).forEach(c => { if(c > maxVotes) maxVotes = c; });
+        let mostVotedIds = [];
+        Object.keys(voteCounts).forEach(id => { if (voteCounts[id] === maxVotes) mostVotedIds.push(id); });
+        let wolfVoted = mostVotedIds.some(id => wolfIds.includes(id));
 
         let html = `
-            <p style="color:#e94560; font-weight:bold; font-size:1.1rem;">人狼が最多票に選ばれました！</p>
-            <p>選ばれた人狼: <b style="color:#f9ed69;">${wolfNames}</b></p>
-            <p class="info-text">人狼は口頭で村人側のお題を推測して答えてください。</p>
+            <p style="color:#ff4757; font-weight:bold; font-size:1.1rem;">投票フェーズ終了！お題推定タイムへ移行しました</p>
+            <p>人狼の正体: <b style="color:#f1c40f;">${wolfNames}</b></p>
+            <p class="info-text">人狼側は村人側のお題を推測して答えてください。</p>
             
             <div class="timer-display" id="ww-timer">01:00</div>
-
-            <div class="info-card">
-                <p style="margin:4px 0; text-align:center;">村人側のお題（正解）: <b style="color:#4ecca3; font-size:1.2rem;">${civilianWord}</b></p>
-            </div>
-
-            <p class="info-text">制限時間終了後、参加者全員で判定を行います。</p>
         `;
 
-        let myGuess = data.guessVotes && data.guessVotes[myPlayerId];
-        if(!myGuess) {
+        if (isMyWolf) {
             html += `
-                <div style="margin-top:15px; border-top:1px solid #334257; padding-top:15px;">
-                    <p>口頭の回答を聞いて判定してください：</p>
-                    <button style="background-color:#4ecca3; color:#1a1a2e; font-weight:bold;" onclick="submitGuessVote('correct')">お題を当てられた</button>
-                    <button style="background-color:#e94560; font-weight:bold;" onclick="submitGuessVote('incorrect')">外した</button>
+                <div class="info-card" style="border-color:#ff4757; background:#2a1b2e;">
+                    <p style="margin:4px 0; text-align:center; color:#ff6b81; font-weight:bold;">【注意】あなたは人狼側です。村人側のお題は見えません。</p>
                 </div>
             `;
         } else {
-            html += `<p style="color:#4ecca3; margin-top:15px;">判定を送信しました。全員の投票を待っています...</p>`;
+            let civilianWord = data.wordWolfData.civilianWord;
+            html += `
+                <div class="info-card">
+                    <p style="margin:4px 0; text-align:center;">村人側のお題（あなたにだけ見えています）: <b style="color:#10b981; font-size:1.2rem;">${civilianWord}</b></p>
+                </div>
+            `;
+        }
+
+        html += `<p class="info-text">制限時間終了後、参加者全員で判定を行います。</p>`;
+
+        let myGuess = data.guessVotes && data.guessVotes[myPlayerId];
+        
+        if (!isMyWolf) {
+            if(!myGuess) {
+                html += `
+                    <div style="margin-top:15px; border-top:1px solid #334155; padding-top:15px;">
+                        <p>口頭の回答を聞いて判定してください：</p>
+                        <button style="background:linear-gradient(135deg, #10b981, #059669); font-weight:bold;" onclick="submitGuessVote('correct')">お題を当てられた</button>
+                        <button style="background:linear-gradient(135deg, #ff4757, #ff6b81); font-weight:bold;" onclick="submitGuessVote('incorrect')">外した</button>
+                    </div>
+                `;
+            } else {
+                html += `<p style="color:#10b981; margin-top:15px;">判定を送信しました。全員の投票を待っています...</p>`;
+            }
+        } else {
+            html += `<p style="color:#f1c40f; margin-top:15px;">村人側の判定をお待ちください...</p>`;
         }
 
         area.innerHTML = html;
@@ -2447,17 +2671,36 @@
         let freshData = (await db.collection("rooms").doc(roomId).get()).data();
         let guessVotes = { ...(freshData.guessVotes || {}), [myPlayerId]: resultStr };
 
-        if(Object.keys(guessVotes).length === freshData.players.length) {
+        let wolfIds = freshData.players.filter(p => freshData.initialRoles[p.id] === "人狼").map(p => p.id);
+        let voteCounts = {};
+        freshData.players.forEach(p => voteCounts[p.id] = 0);
+        Object.values(freshData.votes || {}).forEach(t => { if(t !== 'none' && voteCounts[t] !== undefined) voteCounts[t]++; });
+        let maxVotes = 0;
+        Object.values(voteCounts).forEach(c => { if(c > maxVotes) maxVotes = c; });
+        let mostVotedIds = [];
+        Object.keys(voteCounts).forEach(id => { if (voteCounts[id] === maxVotes) mostVotedIds.push(id); });
+        let wolfVoted = mostVotedIds.some(id => wolfIds.includes(id));
+
+        let citizenIds = freshData.players.filter(p => freshData.initialRoles[p.id] !== "人狼").map(p => p.id);
+        let votedCitizenCount = citizenIds.filter(id => guessVotes[id] !== undefined).length;
+
+        if(votedCitizenCount >= citizenIds.length) {
             if(window.wwTimerInterval) { clearInterval(window.wwTimerInterval); window.wwTimerInterval = null; }
             
             let correctCount = 0;
             let incorrectCount = 0;
-            Object.values(guessVotes).forEach(v => {
-                if(v === 'correct') correctCount++;
+            citizenIds.forEach(id => {
+                if(guessVotes[id] === 'correct') correctCount++;
                 else incorrectCount++;
             });
 
-            let wolfWon = (correctCount >= incorrectCount);
+            let wolfWon = false;
+            if(!wolfVoted) {
+                wolfWon = true;
+            } else {
+                wolfWon = (correctCount >= incorrectCount);
+            }
+
             updateObj["status"] = "result";
             updateObj["playerStats"] = calculateWordWolfResults(freshData, wolfWon ? "wolf_win" : "civilian_win");
         }
@@ -2467,16 +2710,30 @@
 
     function calculateWordWolfResults(data, winnerCamp) {
         let playerStats = JSON.parse(JSON.stringify(data.playerStats || {}));
+        if(!playerStats["wordwolf"]) playerStats["wordwolf"] = {};
 
         data.players.forEach(p => {
             const isWolf = data.initialRoles[p.id] === "人狼";
             let isWon = (winnerCamp === "wolf_win") ? isWolf : !isWolf;
 
-            if(!playerStats[p.id]) {
-                playerStats[p.id] = { totalPlayed: 0, totalWon: 0 };
+            if(!playerStats["wordwolf"][p.id]) {
+                playerStats["wordwolf"][p.id] = { totalPlayed: 0, totalWon: 0, villagerPlayed: 0, villagerWon: 0, wolfPlayed: 0, wolfWon: 0, roles: {} };
             }
-            playerStats[p.id].totalPlayed++;
-            if(isWon) playerStats[p.id].totalWon++;
+            let pStat = playerStats["wordwolf"][p.id];
+            pStat.totalPlayed++;
+            if(isWon) pStat.totalWon++;
+
+            let roleName = isWolf ? "人狼" : "市民";
+            if(isWolf) {
+                pStat.wolfPlayed++;
+                if(isWon) pStat.wolfWon++;
+            } else {
+                pStat.villagerPlayed++;
+                if(isWon) pStat.villagerWon++;
+            }
+            if(!pStat.roles[roleName]) pStat.roles[roleName] = { played: 0, won: 0 };
+            pStat.roles[roleName].played++;
+            if(isWon) pStat.roles[roleName].won++;
         });
 
         return playerStats;
@@ -2494,12 +2751,13 @@
         Object.values(voteCounts).forEach(c => { if(c > maxVotes) maxVotes = c; });
 
         let hangedIds = [];
-        if (maxVotes >= 2) {
+        if (maxVotes >= 1) {
             Object.keys(voteCounts).forEach(id => {
                 if (voteCounts[id] === maxVotes) hangedIds.push(id);
             });
         }
 
+        let hangedWerewolf = hangedIds.some(id => finalRoles[id] === "人狼");
         let aliveWerewolfCount = players.filter(p => finalRoles[p.id] === "人狼").length;
         let isPeaceVillageScenario = (aliveWerewolfCount === 0);
         let isVillagerWin = false;
@@ -2507,11 +2765,11 @@
         if (isPeaceVillageScenario) {
             isVillagerWin = (hangedIds.length === 0);
         } else {
-            let hangedWerewolf = hangedIds.some(id => finalRoles[id] === "人狼");
             isVillagerWin = hangedWerewolf;
         }
 
         let playerStats = JSON.parse(JSON.stringify(data.playerStats || {}));
+        if(!playerStats["jinro"]) playerStats["jinro"] = {};
 
         players.forEach(p => {
             const finalR = finalRoles[p.id];
@@ -2524,11 +2782,25 @@
                 isWon = isWerewolfCamp ? !isVillagerWin : isVillagerWin;
             }
 
-            if(!playerStats[p.id]) {
-                playerStats[p.id] = { totalPlayed: 0, totalWon: 0 };
+            if(!playerStats["jinro"][p.id]) {
+                playerStats["jinro"][p.id] = { totalPlayed: 0, totalWon: 0, villagerPlayed: 0, villagerWon: 0, wolfPlayed: 0, wolfWon: 0, roles: {} };
             }
-            playerStats[p.id].totalPlayed++;
-            if(isWon) playerStats[p.id].totalWon++;
+            let pStat = playerStats["jinro"][p.id];
+            pStat.totalPlayed++;
+            if(isWon) pStat.totalWon++;
+
+            let isWolfCamp = (finalR === "人狼" || finalR === "狂人");
+            if(isWolfCamp) {
+                pStat.wolfPlayed++;
+                if(isWon) pStat.wolfWon++;
+            } else {
+                pStat.villagerPlayed++;
+                if(isWon) pStat.villagerWon++;
+            }
+
+            if(!pStat.roles[finalR]) pStat.roles[finalR] = { played: 0, won: 0 };
+            pStat.roles[finalR].played++;
+            if(isWon) pStat.roles[finalR].won++;
         });
 
         return playerStats;
@@ -2556,7 +2828,7 @@
                 let pRole = data.finalRoles[p.id];
                 let pWolfCamp = (pRole === "人狼" || pRole === "狂人" || pRole === "狂信者");
                 let pWon = (winState === "wolf_win") ? pWolfCamp : !pWolfCamp;
-                let winLoseHtml = pWon ? '<span style="color:#4ecca3; font-weight:bold;">勝利</span>' : '<span style="color:#e94560; font-weight:bold;">敗北</span>';
+                let winLoseHtml = pWon ? '<span style="color:#10b981; font-weight:bold;">勝利</span>' : '<span style="color:#ff4757; font-weight:bold;">敗北</span>';
 
                 return `
                     <tr>
@@ -2591,16 +2863,10 @@
 
         } else if(mode === "wordwolf") {
             let wolfIds = players.filter(p => data.initialRoles[p.id] === "人狼").map(p => p.id);
-            let wolfNames = players.filter(p => wolfIds.includes(p.id)).map(p => p.name).join(', ');
-            
             let guessVotes = data.guessVotes || {};
             let correctCount = 0, incorrectCount = 0;
             Object.values(guessVotes).forEach(v => { if(v === 'correct') correctCount++; else incorrectCount++; });
             
-            let wolfWon = false;
-            let wolfVoted = true;
-            let summaryText = "";
-
             let voteCounts = {};
             players.forEach(p => voteCounts[p.id] = 0);
             Object.values(data.votes || {}).forEach(t => { if(t !== 'none' && voteCounts[t] !== undefined) voteCounts[t]++; });
@@ -2608,7 +2874,10 @@
             Object.values(voteCounts).forEach(c => { if(c > maxVotes) maxVotes = c; });
             let mostVotedIds = [];
             Object.keys(voteCounts).forEach(id => { if (voteCounts[id] === maxVotes) mostVotedIds.push(id); });
-            wolfVoted = mostVotedIds.some(id => wolfIds.includes(id));
+            let wolfVoted = mostVotedIds.some(id => wolfIds.includes(id));
+
+            let wolfWon = false;
+            let summaryText = "";
 
             if(!wolfVoted) {
                 wolfWon = true;
@@ -2625,11 +2894,11 @@
                 let isW = wolfIds.includes(p.id);
                 let pWord = data.wordWolfData.assignments[p.id];
                 let pWon = (wolfWon && isW) || (!wolfWon && !isW);
-                let winLoseHtml = pWon ? '<span style="color:#4ecca3; font-weight:bold;">勝利</span>' : '<span style="color:#e94560; font-weight:bold;">敗北</span>';
+                let winLoseHtml = pWon ? '<span style="color:#10b981; font-weight:bold;">勝利</span>' : '<span style="color:#ff4757; font-weight:bold;">敗北</span>';
 
                 return `
                     <tr>
-                        <td><b>${p.name}</b> ${isW ? '<span style="color:#d32f2f; font-weight:bold;">[人狼]</span>' : '[市民]'}</td>
+                        <td><b>${p.name}</b> ${isW ? '<span style="color:#ff4757; font-weight:bold;">[人狼]</span>' : '[市民]'}</td>
                         <td>${pWord}</td>
                         <td><b>${winLoseHtml}</b></td>
                     </tr>
@@ -2641,7 +2910,7 @@
                 <p class="info-text">${summaryText}</p>
 
                 <p style="margin-top:10px;"><b>正解のお題:</b></p>
-                <p style="font-size:0.95rem; color:#f9ed69;">市民側: ${data.wordWolfData.civilianWord} ／ 人狼側: ${data.wordWolfData.wolfWord}</p>
+                <p style="font-size:0.95rem; color:#f1c40f;">市民側: ${data.wordWolfData.civilianWord} ／ 人狼側: ${data.wordWolfData.wolfWord}</p>
 
                 <table class="result-table">
                     <thead>
@@ -2672,12 +2941,13 @@
             Object.values(voteCounts).forEach(c => { if(c > maxVotes) maxVotes = c; });
 
             let hangedIds = [];
-            if (maxVotes >= 2) {
+            if (maxVotes >= 1) {
                 Object.keys(voteCounts).forEach(id => {
                     if (voteCounts[id] === maxVotes) hangedIds.push(id);
                 });
             }
 
+            let hangedWerewolf = hangedIds.some(id => finalRoles[id] === "人狼");
             let aliveWerewolfCount = players.filter(p => finalRoles[p.id] === "人狼").length;
             let isPeaceVillageScenario = (aliveWerewolfCount === 0);
             let isVillagerWin = false;
@@ -2685,7 +2955,6 @@
             if (isPeaceVillageScenario) {
                 isVillagerWin = (hangedIds.length === 0);
             } else {
-                let hangedWerewolf = hangedIds.some(id => finalRoles[id] === "人狼");
                 isVillagerWin = hangedWerewolf;
             }
 
@@ -2710,10 +2979,10 @@
                 let finR = roleIcons[finalRoles[p.id]] || finalRoles[p.id];
                 let vTargetId = votes[p.id];
                 let vTargetName = vTargetId === 'none' ? '平和村' : (players.find(x => x.id === vTargetId)?.name || '未投票');
-                let isHanged = hangedIds.includes(p.id) ? ' <span style="color:#e94560; font-weight:bold;">[処刑]</span>' : '';
+                let isHanged = hangedIds.includes(p.id) ? ' <span style="color:#ff4757; font-weight:bold;">[処刑]</span>' : '';
                 
                 let pWon = checkPlayerWon(p.id);
-                let winLoseHtml = pWon ? '<span style="color:#4ecca3; font-weight:bold;">勝利</span>' : '<span style="color:#e94560; font-weight:bold;">敗北</span>';
+                let winLoseHtml = pWon ? '<span style="color:#10b981; font-weight:bold;">勝利</span>' : '<span style="color:#ff4757; font-weight:bold;">敗北</span>';
 
                 return `
                     <tr>
@@ -2772,7 +3041,8 @@
         window.runoffSpeechStarted = false;
         window.voteAnnounceTimerSet = false;
         window.morningTimerSet = false;
-        window.lastWordsTimerIntervalSet = false;
+        window.hangedAnnounceTimerSet = false;
+        window.lastWordsSyncInterval = false;
         
         await db.collection("rooms").doc(roomId).update({
             status: "waiting",
