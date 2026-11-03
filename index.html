@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ワンナイト人狼 オンライン</title>
+    <title>人狼系ボードゲーム</title>
     <style>
         body {
             font-family: sans-serif;
@@ -32,11 +32,22 @@
             border-radius: 6px;
             cursor: pointer;
             margin: 8px 4px;
+            transition: all 0.2s ease;
         }
         button:hover { background-color: #d73852; }
         button:disabled { background-color: #555; cursor: not-allowed; }
         .action-btn { background-color: #0f3460; border: 1px solid #e94560; width: 80%; }
         .action-btn:hover { background-color: #e94560; }
+        
+        /* 選択（クリック）されたボタンの強力なハイライト表示 */
+        .action-btn.selected-target {
+            background-color: #4ecca3 !important;
+            color: #1a1a2e !important;
+            font-weight: bold;
+            border: 3px solid #ffffff !important;
+            box-shadow: 0 0 15px rgba(78, 204, 163, 1);
+        }
+
         select, input[type="number"], input[type="text"] {
             padding: 6px;
             font-size: 0.9rem;
@@ -97,17 +108,24 @@
             border: 1px solid #e94560;
             border-radius: 8px;
             padding: 10px;
-            width: 170px;
+            width: 280px;
             box-sizing: border-box;
             text-align: left;
         }
         .co-card-name { font-weight: bold; color: #fff; margin-bottom: 5px; text-align: center; }
+        
+        .co-section {
+            background: #16213e;
+            border: 1px solid #334257;
+            border-radius: 6px;
+            padding: 6px;
+            margin-top: 5px;
+        }
         .memo-label { font-size: 0.7rem; color: #aaa; margin-top: 4px; display: block; }
         
         .stats-box { background: #0f3460; border: 1px solid #4ecca3; padding: 10px; border-radius: 8px; margin-top: 15px; text-align: left; font-size: 0.85rem; }
         .toggle-btn { background-color: #1f4068; border: 1px solid #4ecca3; font-size: 0.85rem; padding: 6px 12px; margin-bottom: 8px; }
 
-        /* 画像サイズを3倍（32px -> 96px）に拡大した縦並びバッジスタイル */
         .role-badge {
             display: inline-flex;
             flex-direction: column;
@@ -124,6 +142,76 @@
             font-size: 0.8rem;
             color: #fff;
         }
+
+        .werewolf-camp-text {
+            color: #d32f2f !important;
+            font-weight: bold;
+        }
+
+        .wolf-chat-box {
+            background: #0b132b;
+            border: 1px solid #d32f2f;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 15px;
+            text-align: left;
+        }
+        .wolf-chat-logs {
+            height: 120px;
+            overflow-y: auto;
+            border: 1px solid #334257;
+            padding: 6px;
+            margin-bottom: 8px;
+            background: #16213e;
+            font-size: 0.85rem;
+        }
+        
+        .memo-day-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+            margin-top: 6px;
+        }
+        .memo-day-box {
+            background: #0f3460;
+            padding: 4px;
+            border-radius: 4px;
+        }
+
+        .history-box {
+            background: #16213e;
+            border: 1px solid #4ecca3;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 15px;
+            text-align: left;
+            font-size: 0.85rem;
+        }
+
+        .big-announce-box {
+            background: #0b132b;
+            border: 3px solid #e94560;
+            border-radius: 12px;
+            padding: 30px 15px;
+            margin: 20px 0;
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.6);
+        }
+        .big-announce-main {
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #f9ed69;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+        .big-announce-sub {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #ff6b6b;
+            background: #16213e;
+            padding: 10px;
+            border-radius: 8px;
+            display: inline-block;
+        }
     </style>
 
     <!-- Firebase SDK (CDN経由) -->
@@ -133,7 +221,7 @@
 <body>
 
 <div class="container">
-    <h1>🐺 ワンナイト人狼 オンライン</h1>
+    <h1 id="app-title">人狼系ボードゲーム</h1>
 
     <!-- 1. ロビー画面 -->
     <div id="screen-lobby">
@@ -159,31 +247,85 @@
         <p class="info-text">参加者にこの番号を伝えてください</p>
         
         <div class="card-box">
-            <h3>参加プレイヤー一覧 (<span id="player-count-num">0</span>人 / 3〜6人)</h3>
+            <h3>参加プレイヤー一覧 (<span id="player-count-num">0</span>人 / 最大20人)</h3>
             <div id="waiting-player-list"></div>
         </div>
 
-        <!-- 📊 ルーム内戦績表示エリア（開閉ボタン式） -->
         <div class="stats-box">
-            <button class="toggle-btn" onclick="toggleStatsVisibility()">📊 ルーム内戦績・勝率を表示する</button>
+            <button class="toggle-btn" onclick="toggleStatsVisibility()">ルーム内戦績・勝率を表示する</button>
             <div id="lobby-stats-content" class="hidden">戦績データはまだありません（ゲームを1回以上行うと集計されます）</div>
         </div>
 
         <div id="host-controls" class="hidden" style="margin-top: 15px;">
             <div class="card-box" style="border-color:#f9ed69;">
-                <h3>🃏 役職カード設定</h3>
-                <p id="card-validation-msg" style="font-weight:bold; font-size:0.95rem;"></p>
-                <div class="setup-group"><label><span class="role-badge"><img src="jinrou.png"><span>人狼</span></span>:</label><input type="number" id="cfg-werewolf" value="2" min="0" max="5" onchange="updateRoleSettings()"></div>
-                <div class="setup-group"><label><span class="role-badge"><img src="uranaishi.png"><span>占い師</span></span>:</label><input type="number" id="cfg-seer" value="1" min="0" max="3" onchange="updateRoleSettings()"></div>
-                <div class="setup-group"><label><span class="role-badge"><img src="kaitou.png"><span>怪盗</span></span>:</label><input type="number" id="cfg-thief" value="1" min="0" max="3" onchange="updateRoleSettings()"></div>
-                <div class="setup-group"><label><span class="role-badge"><img src="kyoujin.png"><span>狂人</span></span>:</label><input type="number" id="cfg-madman" value="1" min="0" max="3" onchange="updateRoleSettings()"></div>
-                <div class="setup-group"><label><span class="role-badge"><img src="murabito.png"><span>村人</span></span>:</label><input type="number" id="cfg-villager" value="2" min="0" max="5" onchange="updateRoleSettings()"></div>
+                <h3>ゲームモード選択</h3>
+                <div class="setup-group">
+                    <label>モード:</label>
+                    <select id="cfg-gamemode" onchange="updateGameModeSetting()">
+                        <option value="jinro">ワンナイト人狼モード (3〜10人)</option>
+                        <option value="wordwolf">ワードウルフモード (3〜10人)</option>
+                        <option value="standard">普通の人狼モード (3〜20人)</option>
+                    </select>
+                </div>
             </div>
 
-            <div class="setup-group">
-                <label>議論タイマー (分):</label>
-                <input type="number" id="timer-minutes" value="1" min="1" max="10" onchange="updateRoleSettings()">
+            <!-- ワンナイト人狼用設定 -->
+            <div id="setting-jinro-box" class="card-box" style="border-color:#f9ed69;">
+                <h3>役職カード設定 (余り2枚)</h3>
+                <p id="card-validation-msg" style="font-weight:bold; font-size:0.95rem;"></p>
+                <div class="setup-group"><label><span class="role-badge"><img src="jinrou.png"><span class="werewolf-camp-text">人狼</span></span>:</label><input type="number" id="cfg-werewolf" value="2" min="0" max="8" onchange="updateRoleSettings()"></div>
+                <div class="setup-group"><label><span class="role-badge"><img src="uranaishi.png"><span>占い師</span></span>:</label><input type="number" id="cfg-seer" value="1" min="0" max="5" onchange="updateRoleSettings()"></div>
+                <div class="setup-group"><label><span class="role-badge"><img src="kaitou.png"><span>怪盗</span></span>:</label><input type="number" id="cfg-thief" value="1" min="0" max="5" onchange="updateRoleSettings()"></div>
+                <div class="setup-group"><label><span class="role-badge"><img src="kyoujin.png"><span class="werewolf-camp-text">狂人</span></span>:</label><input type="number" id="cfg-madman" value="1" min="0" max="5" onchange="updateRoleSettings()"></div>
+                <div class="setup-group"><label><span class="role-badge"><img src="murabito.png"><span>村人</span></span>:</label><input type="number" id="cfg-villager" value="2" min="0" max="10" onchange="updateRoleSettings()"></div>
             </div>
+
+            <!-- ワードウルフ用設定 -->
+            <div id="setting-wordwolf-box" class="card-box hidden" style="border-color:#f9ed69;">
+                <h3>ワードウルフ設定</h3>
+                <div class="setup-group">
+                    <label>人狼（ウルフ）の人数:</label>
+                    <input type="number" id="cfg-ww-wolves" value="1" min="1" max="5" onchange="updateRoleSettings()">
+                </div>
+                <div class="setup-group">
+                    <label>自分の役職（村人/人狼）の表示:</label>
+                    <select id="cfg-ww-showrole" onchange="updateRoleSettings()">
+                        <option value="true">表示する（通常）</option>
+                        <option value="false">表示しない（お題のみ）</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 普通の人狼用設定 -->
+            <div id="setting-standard-box" class="card-box hidden" style="border-color:#f9ed69;">
+                <h3>普通の人狼 役職設定 (余りなし・ぴったり分配)</h3>
+                <p id="std-card-validation-msg" style="font-weight:bold; font-size:0.95rem;"></p>
+                <div class="setup-group"><label><span class="werewolf-camp-text">人狼</span>:</label><input type="number" id="std-cfg-werewolf" value="1" min="1" max="10" onchange="updateRoleSettings()"></div>
+                <div class="setup-group"><label>占い師:</label><input type="number" id="std-cfg-seer" value="1" min="0" max="5" onchange="updateRoleSettings()"></div>
+                <div class="setup-group"><label>霊媒師:</label><input type="number" id="std-cfg-medium" value="0" min="0" max="5" onchange="updateRoleSettings()"></div>
+                <div class="setup-group"><label>狩人:</label><input type="number" id="std-cfg-hunter" value="0" min="0" max="5" onchange="updateRoleSettings()"></div>
+                <div class="setup-group"><label><span class="werewolf-camp-text">狂人</span>:</label><input type="number" id="std-cfg-madman" value="0" min="0" max="5" onchange="updateRoleSettings()"></div>
+                <div class="setup-group"><label><span class="werewolf-camp-text">狂信者</span>:</label><input type="number" id="std-cfg-fanatic" value="0" min="0" max="5" onchange="updateRoleSettings()"></div>
+                <div class="setup-group"><label>村人:</label><input type="number" id="std-cfg-villager" value="2" min="0" max="15" onchange="updateRoleSettings()"></div>
+                <div class="setup-group" style="margin-top:10px;">
+                    <label>投票同数時の処理:</label>
+                    <select id="std-cfg-tie" onchange="updateRoleSettings()">
+                        <option value="none">処刑なし</option>
+                        <option value="random">ランダム処刑</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="timer-setting-group" class="setup-group">
+                <label>昼の議論タイマー (分):</label>
+                <input type="number" id="timer-minutes" value="3" min="1" max="20" onchange="updateRoleSettings()">
+            </div>
+            <!-- 夜タイマー設定（分単位） -->
+            <div id="night-timer-setting-group" class="setup-group hidden">
+                <label>夜の時間タイマー (分):</label>
+                <input type="number" id="timer-night-minutes" value="1" min="1" max="10" onchange="updateRoleSettings()">
+            </div>
+
             <button id="start-game-btn" onclick="startOnlineGame()">ゲーム開始！</button>
         </div>
         <p id="client-wait-msg" class="info-text hidden">ホストがゲームを開始するのを待っています...</p>
@@ -218,25 +360,91 @@
     let roomUnsubscribe = null;
     let localRoomData = null;
     let timerInterval = null;
+    let nightTimerInterval = null;
+    let votePhaseTimerInterval = null;
     let myNightActionResultText = "";
     let personalMemos = {};
+    let myNightDoneLocal = false;
+    let myRoleHistory = []; 
+    let selectedVoteTargetId = null;
+    let currentNightDayTracked = 0;
 
-    // 役職表示用画像タグマップ
+    let lastRenderKey = "";
+
+    const wordWolfGroups = [
+        { group: "筆記具", items: ["ペン", "えんぴつ", "筆", "シャープペンシル"] },
+        { group: "果物", items: ["りんご", "みかん", "バナナ", "いちご"] },
+        { group: "動物", items: ["犬", "猫", "うさぎ", "ハムスター"] },
+        { group: "乗り物", items: ["電車", "バス", "タクシー", "地下鉄"] },
+        { group: "ファストフード", items: ["ハンバーガー", "ピザ", "ホットドッグ", "サンドイッチ"] },
+        { group: "スポーツ", items: ["サッカー", "野球", "バスケットボール", "テニス"] },
+        { group: "調味料", items: ["醤油", "ソース", "ケチャップ", "マヨネーズ"] },
+        { group: "家具", items: ["ベッド", "ソファ", "机", "椅子"] },
+        { group: "季節のイベント", items: ["クリスマス", "ハロウィン", "お正月", "バレンタイン"] },
+        { group: "飲み物", items: ["コーヒー", "紅茶", "緑茶", "ココア"] },
+        { group: "麺類", items: ["ラーメン", "うどん", "そば", "パスタ"] },
+        { group: "肉料理", items: ["焼肉", "ステーキ", "ハンバーグ", "唐揚げ"] },
+        { group: "寿司のネタ", items: ["まぐろ", "サーモン", "たまご", "えび"] },
+        { group: "パン", items: ["食パン", "メロンパン", "クロワッサン", "あんぱん"] },
+        { group: "お菓子", items: ["ポテトチップス", "チョコレート", "クッキー", "せんべい"] },
+        { group: "アイスクリーム", items: ["バニラ", "チョコ", "ストロベリー", "抹茶"] },
+        { group: "中華料理", items: ["餃子", "シュウマイ", "春巻き", "小籠包"] },
+        { group: "朝食の定番", items: ["目玉焼き", "トースト", "納豆", "ヨーグルト"] },
+        { group: "居酒屋メニュー", items: ["枝豆", "焼き鳥", "唐揚げ", "刺身"] },
+        { group: "野菜", items: ["トマト", "きゅうり", "キャベツ", "レタス"] },
+        { group: "海の生き物", items: ["クジラ", "イルカ", "サメ", "ペンギン"] },
+        { group: "虫", items: ["カブトムシ", "クワガタ", "セミ", "トンボ"] },
+        { group: "鳥", items: ["スズメ", "カラス", "ハト", "ツバメ"] },
+        { group: "花", items: ["バラ", "ひまわり", "チューリップ", "さくら"] },
+        { group: "天気", items: ["雨", "雪", "曇り", "雷"] },
+        { group: "地理・地形", items: ["山", "川", "海", "湖"] },
+        { group: "ペット", items: ["犬", "猫", "インコ", "金魚"] },
+        { group: "野生の動物", items: ["ライオン", "トラ", "クマ", "ゾウ"] },
+        { group: "木・植物", items: ["松", "竹", "梅", "桜"] },
+        { group: "宇宙", items: ["月", "太陽", "星", "地球"] },
+        { group: "文房具", items: ["消しゴム", "修正テープ", "ノリ", "ホッチキス"] },
+        { group: "学校の科目", items: ["国語", "数学", "理科", "社会"] },
+        { group: "音楽・楽器", items: ["ピアノ", "ギター", "ドラム", "バイオリン"] },
+        { group: "映画のジャンル", items: ["アクション", "ホラー", "コメディ", "SF"] },
+        { group: "休日の過ごし方", items: ["映画鑑賞", "読書", "ドライブ", "ショッピング"] },
+        { group: "家電", items: ["冷蔵庫", "洗濯機", "電子レンジ", "掃除機"] },
+        { group: "ファッション", items: ["Tシャツ", "パーカー", "セーター", "ジャケット"] },
+        { group: "靴", items: ["スニーカー", "革靴", "サンダル", "ブーツ"] },
+        { group: "財布の中身", items: ["現金", "クレジットカード", "免許証", "レシート"] },
+        { group: "スマホの機能", items: ["カメラ", "アラーム", "電卓", "カレンダー"] },
+        { group: "建物の種類", items: ["一戸建て", "マンション", "アパート", "タワーマンション"] },
+        { group: "お店", items: ["コンビニ", "スーパー", "ドラッグストア", "デパート"] },
+        { group: "旅行先", items: ["ハワイ", "韓国", "台湾", "フランス"] },
+        { group: "日本の観光地", items: ["東京タワー", "京都の寺", "大阪の城", "北海道の大自然"] },
+        { group: "乗り物の設備", items: ["シートベルト", "エアバッグ", "ヘッドレスト", "ハンドル"] },
+        { group: "体の部位", items: ["目", "鼻", "口", "耳"] },
+        { group: "感情", items: ["嬉しい", "怒り", "悲しい", "楽しい"] },
+        { group: "色", items: ["赤", "青", "黄", "緑"] },
+        { group: "形", items: ["丸", "三角", "四角", "星型"] },
+        { group: "職業", items: ["教師", "医者", "警察官", "消防士"] }
+    ];
+
     const roleIcons = {
         "村人": '<span class="role-badge"><img src="murabito.png"><span>村人</span></span>',
-        "人狼": '<span class="role-badge"><img src="jinrou.png"><span>人狼</span></span>',
+        "人狼": '<span class="role-badge"><img src="jinrou.png"><span class="werewolf-camp-text">人狼</span></span>',
         "占い師": '<span class="role-badge"><img src="uranaishi.png"><span>占い師</span></span>',
         "怪盗": '<span class="role-badge"><img src="kaitou.png"><span>怪盗</span></span>',
-        "狂人": '<span class="role-badge"><img src="kyoujin.png"><span>狂人</span></span>',
+        "狂人": '<span class="role-badge"><img src="kyoujin.png"><span class="werewolf-camp-text">狂人</span></span>',
+        "霊媒師": '<span class="role-badge"><span>霊媒師</span></span>',
+        "狩人": '<span class="role-badge"><span>狩人</span></span>',
+        "狂信者": '<span class="role-badge"><span class="werewolf-camp-text">狂信者</span></span>',
         "未CO": '<span class="role-badge"><img src="unknown.png"><span>未CO</span></span>'
     };
 
     const roleDetails = {
         "村人": "特殊能力はありません。議論で人狼を見つけ出しましょう！",
-        "人狼": "仲間の人狼を確認できます。",
-        "狂人": "人狼側の味方です。誰が人狼かは分かりません。",
-        "占い師": "誰か1人の初期役職か、中央のカード2枚を確認できます。",
-        "怪盗": "誰か1人と役職を交換できます（新しい役職として勝利を目指します）。"
+        "人狼": "仲間の人狼を確認し、夜時間に襲撃対象を選択できます。",
+        "狂人": "人狼側の味方です（村人カウント）。誰が人狼かは分かりません。",
+        "狂信者": "人狼側の味方です（村人カウント）。誰が人狼かを知ることができます。",
+        "占い師": "初日はランダムな〇（白）結果を獲得し、翌日以降は指定プレイヤーを占えます。",
+        "霊媒師": "前日に追放された人物が〇（人狼以外）か●（人狼）かを確認できます。",
+        "狩人": "夜時間に自分以外のプレイヤー1人を保護し、人狼の襲撃から守ります。",
+        "怪盗": "誰か1人と役職を交換できます。"
     };
 
     function generateRoomId() {
@@ -265,15 +473,34 @@
             status: "waiting",
             hostId: myPlayerId,
             players: [{ id: myPlayerId, name: myName }],
+            gameMode: "jinro",
             roleConfig: { "人狼": 2, "占い師": 1, "怪盗": 1, "狂人": 1, "村人": 2 },
+            stdRoleConfig: { "人狼": 1, "占い師": 1, "霊媒師": 0, "狩人": 0, "狂人": 0, "狂信者": 0, "村人": 2 },
+            stdTieAction: "none",
+            wordWolfConfig: { wolves: 1, showRole: true },
             allDeck: [],
             initialRoles: {},
             finalRoles: {},
             centralCards: [],
+            wordWolfData: {},
             nightDone: {},
+            nightActions: {},
+            wolfReVote: false,
+            wolfReVoteCandidates: [],
+            wolfChatLogs: [],
+            alivePlayers: {},
+            lastHangedId: null,
+            lastNightVictimId: null,
+            lastHunterTarget: {},
+            dayCount: 1,
             votes: {},
-            timerMinutes: 1,
+            voteLogs: [],
+            standardVoteState: null,
+            guessVotes: {},
+            timerMinutes: 3,
+            timerNightMinutes: 1,
             timerEndTime: null,
+            nightTimerEndTime: null,
             playerStats: {}
         };
 
@@ -296,6 +523,7 @@
         isHost = false;
 
         let players = doc.data().players;
+        if(players.length >= 20) { alert("部屋が満員（最大20人）です。"); return; }
         players.push({ id: myPlayerId, name: myName });
 
         await docRef.update({ players: players });
@@ -312,17 +540,27 @@
             const data = doc.data();
             localRoomData = data;
             
+            const appTitle = document.getElementById('app-title');
+            if (data.gameMode === 'wordwolf') {
+                appTitle.innerText = "人狼系ボードゲーム (ワードウルフ)";
+            } else if(data.gameMode === 'standard') {
+                appTitle.innerText = "人狼系ボードゲーム (普通の人狼)";
+            } else {
+                appTitle.innerText = "人狼系ボードゲーム (ワンナイト人狼)";
+            }
+
             renderRoomState(data);
         });
     }
 
     function renderRoomState(data) {
         if(data.status === "waiting") {
+            lastRenderKey = "";
             document.getElementById('screen-game').classList.add('hidden');
             document.getElementById('screen-waiting').classList.remove('hidden');
 
             document.getElementById('waiting-player-list').innerHTML = 
-                data.players.map(p => `<div class="player-list-item"><span>👤 ${p.name} ${p.id === data.hostId ? '(ホスト)' : ''}</span></div>`).join('');
+                data.players.map(p => `<div class="player-list-item">👤 ${p.name} ${p.id === data.hostId ? '(ホスト)' : ''}</div>`).join('');
             document.getElementById('player-count-num').innerText = data.players.length;
 
             renderLobbyStats(data);
@@ -330,7 +568,26 @@
             if(isHost) {
                 document.getElementById('host-controls').classList.remove('hidden');
                 document.getElementById('client-wait-msg').classList.add('hidden');
-                validateRoleConfig(data);
+                
+                const mode = document.getElementById('cfg-gamemode').value;
+                if(mode === 'wordwolf') {
+                    document.getElementById('setting-jinro-box').classList.add('hidden');
+                    document.getElementById('setting-wordwolf-box').classList.remove('hidden');
+                    document.getElementById('setting-standard-box').classList.add('hidden');
+                    document.getElementById('night-timer-setting-group').classList.add('hidden');
+                } else if(mode === 'standard') {
+                    document.getElementById('setting-jinro-box').classList.add('hidden');
+                    document.getElementById('setting-wordwolf-box').classList.add('hidden');
+                    document.getElementById('setting-standard-box').classList.remove('hidden');
+                    document.getElementById('night-timer-setting-group').classList.remove('hidden');
+                    validateStandardRoleConfig(data);
+                } else {
+                    document.getElementById('setting-jinro-box').classList.remove('hidden');
+                    document.getElementById('setting-wordwolf-box').classList.add('hidden');
+                    document.getElementById('setting-standard-box').classList.add('hidden');
+                    document.getElementById('night-timer-setting-group').classList.add('hidden');
+                    validateRoleConfig(data);
+                }
             } else {
                 document.getElementById('host-controls').classList.add('hidden');
                 document.getElementById('client-wait-msg').classList.remove('hidden');
@@ -361,27 +618,9 @@
             }
 
             let totalRate = pStat.totalPlayed > 0 ? Math.round((pStat.totalWon / pStat.totalPlayed) * 100) : 0;
-            let villagerRate = pStat.villagerPlayed > 0 ? Math.round((pStat.villagerWon / pStat.villagerPlayed) * 100) : 0;
-            let werewolfRate = pStat.werewolfPlayed > 0 ? Math.round((pStat.werewolfWon / pStat.werewolfPlayed) * 100) : 0;
-
             html += `<div style="border-bottom:1px dashed #334257; padding-bottom:6px; margin-bottom:6px;">`;
             html += `<b>👤 ${p.name}</b> (総試合: ${pStat.totalPlayed}回)<br>`;
-            html += `・全陣営勝率: <b>${totalRate}%</b> (${pStat.totalWon}/${pStat.totalPlayed}) | `;
-            html += `村人陣営: <b>${villagerRate}%</b> (${pStat.villagerWon}/${pStat.villagerPlayed}) | `;
-            html += `人狼陣営: <b>${werewolfRate}%</b> (${pStat.werewolfWon}/${pStat.werewolfPlayed})<br>`;
-            
-            let roleStrs = [];
-            for(let r in pStat.roles) {
-                let rData = pStat.roles[r];
-                if(rData.played > 0) {
-                    let rRate = Math.round((rData.won / rData.played) * 100);
-                    let rIcon = roleIcons[r] || r;
-                    roleStrs.push(`${rIcon}: ${rRate}% (${rData.won}/${rData.played})`);
-                }
-            }
-            if(roleStrs.length > 0) {
-                html += `<span style="font-size:0.75rem; color:#f9ed69;">役職別: ${roleStrs.join(' / ')}</span>`;
-            }
+            html += `・勝率: <b>${totalRate}%</b> (${pStat.totalWon}/${pStat.totalPlayed})<br>`;
             html += `</div>`;
         });
 
@@ -389,6 +628,9 @@
     }
 
     function validateRoleConfig(data) {
+        const mode = document.getElementById('cfg-gamemode').value;
+        if(mode !== 'jinro') return true;
+
         const pCount = data.players.length;
         const targetTotal = pCount + 2;
 
@@ -405,101 +647,1300 @@
 
         if (currentTotal !== targetTotal) {
             msgElem.style.color = "#ff6b6b";
-            msgElem.innerText = `⚠️ 役職数が不適です (現在: ${currentTotal}枚 / 必要: ${targetTotal}枚)`;
+            msgElem.innerText = `役職数が不適です (現在: ${currentTotal}枚 / 必要: ${targetTotal}枚)`;
             btnElem.disabled = true;
             return false;
         } else {
             msgElem.style.color = "#4ecca3";
-            msgElem.innerText = `✅ 枚数OK (合計: ${currentTotal}枚)`;
+            msgElem.innerText = `枚数OK (合計: ${currentTotal}枚)`;
             btnElem.disabled = false;
             return true;
         }
     }
 
+    function validateStandardRoleConfig(data) {
+        const mode = document.getElementById('cfg-gamemode').value;
+        if(mode !== 'standard') return true;
+
+        const pCount = data.players.length;
+
+        const w = parseInt(document.getElementById('std-cfg-werewolf').value) || 0;
+        const s = parseInt(document.getElementById('std-cfg-seer').value) || 0;
+        const m = parseInt(document.getElementById('std-cfg-medium').value) || 0;
+        const h = parseInt(document.getElementById('std-cfg-hunter').value) || 0;
+        const mad = parseInt(document.getElementById('std-cfg-madman').value) || 0;
+        const fan = parseInt(document.getElementById('std-cfg-fanatic').value) || 0;
+        const v = parseInt(document.getElementById('std-cfg-villager').value) || 0;
+        const currentTotal = w + s + m + h + mad + fan + v;
+
+        const msgElem = document.getElementById('std-card-validation-msg');
+        const btnElem = document.getElementById('start-game-btn');
+        if(!msgElem || !btnElem) return true;
+
+        if (currentTotal !== pCount) {
+            msgElem.style.color = "#ff6b6b";
+            msgElem.innerText = `役職数が不適です (現在: ${currentTotal}枚 / 参加人数ピッタリ ${pCount}枚必要)`;
+            btnElem.disabled = true;
+            return false;
+        } else {
+            msgElem.style.color = "#4ecca3";
+            msgElem.innerText = `枚数OK (合計: ${currentTotal}枚)`;
+            btnElem.disabled = false;
+            return true;
+        }
+    }
+
+    async function updateGameModeSetting() {
+        if (!isHost) return;
+        const mode = document.getElementById('cfg-gamemode').value;
+        if(mode === 'wordwolf') {
+            document.getElementById('setting-jinro-box').classList.add('hidden');
+            document.getElementById('setting-wordwolf-box').classList.remove('hidden');
+            document.getElementById('setting-standard-box').classList.add('hidden');
+            document.getElementById('night-timer-setting-group').classList.add('hidden');
+            document.getElementById('start-game-btn').disabled = false;
+        } else if(mode === 'standard') {
+            document.getElementById('setting-jinro-box').classList.add('hidden');
+            document.getElementById('setting-wordwolf-box').classList.add('hidden');
+            document.getElementById('setting-standard-box').classList.remove('hidden');
+            document.getElementById('night-timer-setting-group').classList.remove('hidden');
+            validateStandardRoleConfig(localRoomData);
+        } else {
+            document.getElementById('setting-jinro-box').classList.remove('hidden');
+            document.getElementById('setting-wordwolf-box').classList.add('hidden');
+            document.getElementById('setting-standard-box').classList.add('hidden');
+            document.getElementById('night-timer-setting-group').classList.add('hidden');
+            validateRoleConfig(localRoomData);
+        }
+        await db.collection("rooms").doc(roomId).update({ gameMode: mode });
+    }
+
     async function updateRoleSettings() {
         if (!isHost) return;
-        const config = {
-            "人狼": parseInt(document.getElementById('cfg-werewolf').value) || 0,
-            "占い師": parseInt(document.getElementById('cfg-seer').value) || 0,
-            "怪盗": parseInt(document.getElementById('cfg-thief').value) || 0,
-            "狂人": parseInt(document.getElementById('cfg-madman').value) || 0,
-            "村人": parseInt(document.getElementById('cfg-villager').value) || 0
-        };
-        const timerMins = parseInt(document.getElementById('timer-minutes').value) || 1;
+        const mode = document.getElementById('cfg-gamemode').value;
+        const timerMins = parseInt(document.getElementById('timer-minutes').value) || 3;
+        const timerNightMins = parseInt(document.getElementById('timer-night-minutes').value) || 1;
 
-        await db.collection("rooms").doc(roomId).update({
-            roleConfig: config,
-            timerMinutes: timerMins
-        });
+        let updates = { timerMinutes: timerMins, timerNightMinutes: timerNightMins };
+        if(mode === 'wordwolf') {
+            const showRoleBool = document.getElementById('cfg-ww-showrole').value === 'true';
+            updates.wordWolfConfig = { 
+                wolves: parseInt(document.getElementById('cfg-ww-wolves').value) || 1,
+                showRole: showRoleBool
+            };
+        } else if(mode === 'standard') {
+            updates.stdRoleConfig = {
+                "人狼": parseInt(document.getElementById('std-cfg-werewolf').value) || 0,
+                "占い師": parseInt(document.getElementById('std-cfg-seer').value) || 0,
+                "霊媒師": parseInt(document.getElementById('std-cfg-medium').value) || 0,
+                "狩人": parseInt(document.getElementById('std-cfg-hunter').value) || 0,
+                "狂人": parseInt(document.getElementById('std-cfg-madman').value) || 0,
+                "狂信者": parseInt(document.getElementById('std-cfg-fanatic').value) || 0,
+                "村人": parseInt(document.getElementById('std-cfg-villager').value) || 0
+            };
+            updates.stdTieAction = document.getElementById('std-cfg-tie').value;
+            validateStandardRoleConfig(localRoomData);
+        } else {
+            updates.roleConfig = {
+                "人狼": parseInt(document.getElementById('cfg-werewolf').value) || 0,
+                "占い師": parseInt(document.getElementById('cfg-seer').value) || 0,
+                "怪盗": parseInt(document.getElementById('cfg-thief').value) || 0,
+                "狂人": parseInt(document.getElementById('cfg-madman').value) || 0,
+                "村人": parseInt(document.getElementById('cfg-villager').value) || 0
+            };
+            validateRoleConfig(localRoomData);
+        }
+
+        await db.collection("rooms").doc(roomId).update(updates);
     }
 
     async function startOnlineGame() {
         const players = localRoomData.players;
         const count = players.length;
-        if(count < 3 || count > 6) { alert("ゲームには合計3〜6人必要です。"); return; }
-        if(!validateRoleConfig(localRoomData)) { alert("役職数が不適です"); return; }
+        const mode = localRoomData.gameMode || "jinro";
 
-        const config = localRoomData.roleConfig || { "人狼": 2, "占い師": 1, "怪盗": 1, "狂人": 1, "村人": 2 };
-        let deck = [];
-        Object.keys(config).forEach(role => {
-            for(let i=0; i<config[role]; i++) deck.push(role);
-        });
+        if(mode === "standard") {
+            if(count < 3 || count > 20) { alert("普通の人狼モードには3〜20人必要です。"); return; }
+        } else {
+            if(count < 3 || count > 10) { alert("このモードには3〜10人必要です。"); return; }
+        }
 
-        const allDeckCopy = [...deck];
-        deck.sort(() => Math.random() - 0.5);
-
-        let initRoles = {};
-        let finRoles = {};
-        players.forEach((p, idx) => {
-            initRoles[p.id] = deck[idx];
-            finRoles[p.id] = deck[idx];
-        });
-
-        let centrals = [deck[count], deck[count + 1]];
         myNightActionResultText = "";
         personalMemos = {};
+        myNightDoneLocal = false;
+        myRoleHistory = [];
+        selectedVoteTargetId = null;
+        currentNightDayTracked = 0;
 
-        await db.collection("rooms").doc(roomId).update({
+        let aliveObj = {};
+        players.forEach(p => aliveObj[p.id] = true);
+
+        let updatePayload = {
             status: "night_action",
-            allDeck: allDeckCopy,
-            initialRoles: initRoles,
-            finalRoles: finRoles,
-            centralCards: centrals,
             nightDone: {},
+            nightActions: {},
+            wolfReVote: false,
+            wolfReVoteCandidates: [],
+            wolfChatLogs: [],
+            alivePlayers: aliveObj,
+            lastHangedId: null,
+            lastNightVictimId: null,
+            lastHunterTarget: {},
+            dayCount: 1,
             votes: {},
-            timerEndTime: null
-        });
+            voteLogs: [],
+            standardVoteState: null,
+            guessVotes: {},
+            timerEndTime: null,
+            nightTimerEndTime: Date.now() + ((localRoomData.timerNightMinutes || 1) * 60 * 1000)
+        };
+
+        if(mode === "standard") {
+            if(!validateStandardRoleConfig(localRoomData)) { alert("役職数が不適です"); return; }
+            const config = localRoomData.stdRoleConfig;
+            let deck = [];
+            Object.keys(config).forEach(role => {
+                for(let i=0; i<config[role]; i++) deck.push(role);
+            });
+
+            const allDeckCopy = [...deck];
+            deck.sort(() => Math.random() - 0.5);
+
+            let initRoles = {};
+            let finRoles = {};
+            players.forEach((p, idx) => {
+                initRoles[p.id] = deck[idx];
+                finRoles[p.id] = deck[idx];
+            });
+
+            updatePayload.allDeck = allDeckCopy;
+            updatePayload.initialRoles = initRoles;
+            updatePayload.finalRoles = finRoles;
+            updatePayload.centralCards = [];
+            updatePayload.wordWolfData = {};
+
+        } else if(mode === "wordwolf") {
+            const wolfCount = (localRoomData.wordWolfConfig && localRoomData.wordWolfConfig.wolves) || 1;
+            if(wolfCount >= count) { alert("人狼の人数がプレイヤー数以上になっています。"); return; }
+
+            const groupObj = wordWolfGroups[Math.floor(Math.random() * wordWolfGroups.length)];
+            let itemsCopy = [...groupObj.items];
+            itemsCopy.sort(() => Math.random() - 0.5);
+            const civilianWord = itemsCopy[0];
+            const wolfWord = itemsCopy[1];
+
+            let shuffledPlayers = [...players];
+            shuffledPlayers.sort(() => Math.random() - 0.5);
+            
+            let wwAssignments = {};
+            let initRoles = {};
+            let finRoles = {};
+
+            shuffledPlayers.forEach((p, idx) => {
+                if(idx < wolfCount) {
+                    initRoles[p.id] = "人狼";
+                    finRoles[p.id] = "人狼";
+                    wwAssignments[p.id] = wolfWord;
+                } else {
+                    initRoles[p.id] = "村人";
+                    finRoles[p.id] = "村人";
+                    wwAssignments[p.id] = civilianWord;
+                }
+            });
+
+            updatePayload.allDeck = groupObj.items;
+            updatePayload.initialRoles = initRoles;
+            updatePayload.finalRoles = finRoles;
+            updatePayload.centralCards = [];
+            updatePayload.wordWolfData = { civilianWord: civilianWord, wolfWord: wolfWord, assignments: wwAssignments };
+
+        } else {
+            if(!validateRoleConfig(localRoomData)) { alert("役職数が不適です"); return; }
+            const config = localRoomData.roleConfig || { "人狼": 2, "占い師": 1, "怪盗": 1, "狂人": 1, "村人": 2 };
+            let deck = [];
+            Object.keys(config).forEach(role => {
+                for(let i=0; i<config[role]; i++) deck.push(role);
+            });
+
+            const allDeckCopy = [...deck];
+            deck.sort(() => Math.random() - 0.5);
+
+            let initRoles = {};
+            let finRoles = {};
+            players.forEach((p, idx) => {
+                initRoles[p.id] = deck[idx];
+                finRoles[p.id] = deck[idx];
+            });
+
+            let centrals = [deck[count], deck[count + 1]];
+            updatePayload.allDeck = allDeckCopy;
+            updatePayload.initialRoles = initRoles;
+            updatePayload.finalRoles = finRoles;
+            updatePayload.centralCards = centrals;
+            updatePayload.wordWolfData = {};
+        }
+
+        await db.collection("rooms").doc(roomId).update(updatePayload);
     }
 
     function renderGamePhase(data) {
-        const area = document.getElementById('action-area');
         const title = document.getElementById('phase-title');
+        const mode = data.gameMode || "jinro";
 
         if(data.status === "night_action") {
-            title.innerText = "🌙 夜の確認・行動タイム";
-            if(data.nightDone && data.nightDone[myPlayerId]) {
-                area.innerHTML = `<p>夜の行動が完了しました。</p><p class="info-text">他のプレイヤーの完了を待っています...</p>`;
+            title.innerText = mode === "wordwolf" ? "お題確認タイム" : `${data.dayCount || 1}日目の夜の時間`;
+            
+            if (!window.nightTimerRunning) {
+                startNightTimerSync(data);
+            }
+
+            if(mode === "wordwolf") {
+                renderWordWolfNight(data);
+            } else if(mode === "standard") {
+                renderStandardNight(data);
             } else {
                 renderNightActionsHub(data);
             }
+        } else {
+            if (nightTimerInterval) { clearInterval(nightTimerInterval); nightTimerInterval = null; window.nightTimerRunning = false; }
+        }
+
+        if(data.status === "last_words") {
+            lastRenderKey = "last_words_" + (data.dayCount || 1);
+            title.innerText = "遺言タイム";
+            renderLastWordsPhase(data);
+        } else if(data.status === "vote_announce_hold") {
+            lastRenderKey = "vote_announce_hold_" + (data.dayCount || 1);
+            title.innerText = "投票結果発表";
+
+            let hangedP = data.lastHangedId ? data.players.find(p => p.id === data.lastHangedId) : null;
+            let announceMain = hangedP 
+                ? `📢 投票の結果 <span style="color:#f9ed69;">${hangedP.name}</span> さんが追放されました` 
+                : `📢 投票の結果 <span style="color:#4ecca3;">誰も追放されませんでした</span>`;
+
+            document.getElementById('action-area').innerHTML = `
+                <div class="big-announce-box">
+                    <div class="big-announce-main">${announceMain}</div>
+                    <div class="big-announce-sub">🌙 夜を迎えます。ミュートしてください。</div>
+                </div>
+                <p class="info-text">まもなく夜の時間へ移動します (3秒)</p>
+            `;
+
+            if(isHost && !window.voteAnnounceTimerSet) {
+                window.voteAnnounceTimerSet = true;
+                setTimeout(async () => {
+                    window.voteAnnounceTimerSet = false;
+                    let freshData = (await db.collection("rooms").doc(roomId).get()).data();
+                    if(freshData.status === "vote_announce_hold") {
+                        let winState = checkStandardWinCondition(freshData.finalRoles, freshData.alivePlayers);
+                        if(winState) {
+                            await db.collection("rooms").doc(roomId).update({
+                                status: "result",
+                                playerStats: calculateStandardResults(freshData, winState)
+                            });
+                        } else {
+                            await db.collection("rooms").doc(roomId).update({
+                                status: "night_action",
+                                dayCount: (freshData.dayCount || 1) + 1,
+                                nightDone: {},
+                                nightActions: {},
+                                votes: {},
+                                nightTimerEndTime: Date.now() + ((freshData.timerNightMinutes || 1) * 60 * 1000)
+                            });
+                            myNightDoneLocal = false;
+                            selectedVoteTargetId = null;
+                        }
+                    }
+                }, 3000);
+            }
+
+        } else if(data.status === "morning_transition") {
+            lastRenderKey = "morning_transition_" + (data.dayCount || 1);
+            title.innerText = "朝を迎えます...";
+
+            let vicP = data.lastNightVictimId ? data.players.find(p => p.id === data.lastNightVictimId) : null;
+            let morningMain = vicP 
+                ? `☀️ 夜が明けると <span style="color:#e94560;">${vicP.name}</span> さんが無惨な姿で発見されました` 
+                : `☀️ 夜が明けると <span style="color:#4ecca3;">犠牲者はいませんでした</span>`;
+
+            document.getElementById('action-area').innerHTML = `
+                <div class="big-announce-box" style="border-color:#4ecca3; box-shadow: 0 0 20px rgba(78, 204, 163, 0.6);">
+                    <div class="big-announce-main">${morningMain}</div>
+                    <div class="big-announce-sub" style="color:#4ecca3;">🎙️ ミュートを解除してください</div>
+                </div>
+                <p class="info-text">まもなく昼の議論が始まります (3秒)</p>
+            `;
+
+            if(isHost && !window.morningTimerSet) {
+                window.morningTimerSet = true;
+                setTimeout(async () => {
+                    window.morningTimerSet = false;
+                    await processMorningTransition();
+                }, 3000);
+            }
         } else if(data.status === "day_discussion") {
-            title.innerText = "☀️ 朝の議論タイム";
+            myNightDoneLocal = false;
+            selectedVoteTargetId = null;
+            title.innerText = `${data.dayCount || 1}日目の昼の議論タイム`;
             if (!document.getElementById('timer')) {
                 startTimerSync(data);
             } else {
                 renderMemoGridOnly();
             }
         } else if(data.status === "voting") {
-            title.innerText = "🗳️ 投票フェーズ";
-            if(data.votes && data.votes[myPlayerId] !== undefined) {
-                area.innerHTML = `<p>投票が完了しました。</p><p class="info-text">全員の投票が揃うまでお待ちください...</p>`;
+            title.innerText = mode === "standard" ? "夕方：投票フェーズ" : "投票フェーズ";
+            if(mode === "standard") {
+                renderStandardVotingPhase(data);
             } else {
-                renderVotingButtons(data);
+                if(data.votes && data.votes[myPlayerId] !== undefined) {
+                    let key = "voting_done_" + myPlayerId;
+                    if (lastRenderKey !== key) {
+                        lastRenderKey = key;
+                        document.getElementById('action-area').innerHTML = `<p>投票が完了しました。</p><p class="info-text">全員の投票が揃うまでお待ちください...</p>`;
+                    }
+                } else {
+                    renderVotingButtons(data);
+                }
             }
+        } else if(data.status === "wordwolf_guess") {
+            title.innerText = "お題推定フェーズ (1分)";
+            renderWordWolfGuessPhase(data);
         } else if(data.status === "result") {
-            title.innerText = "📜 最終結果発表";
+            lastRenderKey = "result_" + (data.dayCount || 1);
+            title.innerText = "最終結果発表";
             renderOnlineResults(data);
         }
+    }
+
+    function startNightTimerSync(data) {
+        window.nightTimerRunning = true;
+        if(nightTimerInterval) clearInterval(nightTimerInterval);
+
+        nightTimerInterval = setInterval(() => {
+            const now = Date.now();
+            const diff = Math.max(0, Math.floor(((data.nightTimerEndTime || (Date.now() + 60000)) - now) / 1000));
+            
+            const timerElem = document.getElementById('night-timer');
+            if(timerElem) timerElem.innerText = `${String(Math.floor(diff/60)).padStart(2,'0')}:${String(diff%60).padStart(2,'0')}`;
+
+            if(diff <= 0) {
+                clearInterval(nightTimerInterval);
+                nightTimerInterval = null;
+                window.nightTimerRunning = false;
+                if(isHost) {
+                    forceCompleteNightAndTransition();
+                }
+            }
+        }, 1000);
+    }
+
+    async function forceCompleteNightAndTransition() {
+        let freshData = (await db.collection("rooms").doc(roomId).get()).data();
+        if(freshData.status !== "night_action") return;
+
+        const mode = freshData.gameMode || "jinro";
+        let nightDone = freshData.nightDone || {};
+        let nActions = freshData.nightActions || {};
+        let alivePlayers = freshData.alivePlayers || {};
+
+        if(mode === "standard") {
+            freshData.players.forEach(p => {
+                if(!alivePlayers[p.id]) return;
+                let role = freshData.finalRoles[p.id];
+                let livingOthers = freshData.players.filter(o => o.id !== p.id && alivePlayers[o.id]);
+
+                if(role === "人狼" && freshData.dayCount > 1) {
+                    let hasAttacked = Object.keys(nActions).some(id => freshData.finalRoles[id] === "人狼" && nActions[id].attackTarget);
+                    if(!hasAttacked && livingOthers.length > 0) {
+                        let randTarget = livingOthers[Math.floor(Math.random() * livingOthers.length)];
+                        if(!nActions[p.id]) nActions[p.id] = {};
+                        nActions[p.id].attackTarget = randTarget.id;
+                    }
+                } else if(role === "占い師" && freshData.dayCount > 1) {
+                    if(!nActions[p.id] && livingOthers.length > 0) {
+                        let randTarget = livingOthers[Math.floor(Math.random() * livingOthers.length)];
+                        if(!nActions[p.id]) nActions[p.id] = {};
+                        nActions[p.id].seerTarget = randTarget.id;
+                    }
+                } else if(role === "狩人" && freshData.dayCount > 1) {
+                    if(!nActions[p.id] && livingOthers.length > 0) {
+                        let lastT = (freshData.lastHunterTarget && freshData.lastHunterTarget[p.id]) || null;
+                        let validTargets = livingOthers.filter(o => o.id !== lastT);
+                        if(validTargets.length === 0) validTargets = livingOthers;
+                        let randTarget = validTargets[Math.floor(Math.random() * validTargets.length)];
+                        if(!nActions[p.id]) nActions[p.id] = {};
+                        nActions[p.id].hunterTarget = randTarget.id;
+                    }
+                }
+                nightDone[p.id] = true;
+            });
+
+            let stdRes = processStandardNightActions({ ...freshData, nightActions: nActions });
+            let updates = {
+                nightActions: nActions,
+                nightDone: nightDone
+            };
+
+            if(stdRes.reVote) {
+                updates.wolfReVote = true;
+                updates.wolfReVoteCandidates = stdRes.reVoteCandidates;
+            } else {
+                updates.status = "morning_transition";
+                updates.lastNightVictimId = stdRes.victimId;
+                updates.lastHunterTarget = stdRes.lastHunterTarget;
+                updates.wolfReVote = false;
+            }
+            await db.collection("rooms").doc(roomId).update(updates);
+        } else {
+            freshData.players.forEach(p => { nightDone[p.id] = true; });
+            await db.collection("rooms").doc(roomId).update({
+                nightDone: nightDone,
+                status: "day_discussion",
+                timerEndTime: Date.now() + ((freshData.timerMinutes || 3) * 60 * 1000)
+            });
+        }
+    }
+
+    function renderStandardVotingPhase(data) {
+        const area = document.getElementById('action-area');
+        const vState = data.standardVoteState;
+
+        if(!vState) {
+            if(isHost) initStandardVoteState(data);
+            area.innerHTML = `<p>投票フェーズを準備中...</p>`;
+            return;
+        }
+
+        buildVotingPhaseShell(data, vState);
+
+        if (!votePhaseTimerInterval) {
+            startVotePhaseTimer(data);
+        }
+    }
+
+    function buildVotingPhaseShell(data, vState) {
+        const area = document.getElementById('action-area');
+        const now = Date.now();
+
+        if(vState.phase === 'handraise') {
+            let myVote = vState.votes && vState.votes[myPlayerId];
+            let myRaised = vState.hands && vState.hands[myPlayerId];
+            let votedCount = Object.keys(vState.votes || {}).length;
+            let livingCount = data.players.filter(p => data.alivePlayers[p.id]).length;
+            let remSec = Math.max(0, Math.floor(((vState.handraiseEndTime || 0) - now) / 1000));
+
+            if(!data.alivePlayers[myPlayerId]) {
+                area.innerHTML = `<p style="color:#e94560;">あなたは死亡しているため投票できません。</p><p class="info-text">生存プレイヤーの挙手・投票を待っています...</p>`;
+                return;
+            }
+
+            let html = `
+                <div id="v-shell-container">
+                    <p><b>挙手制投票フェーズ (<span id="voted-count-span">${votedCount}</span>/${livingCount}名完了)</b></p>
+                    <div class="timer-display" id="shared-vote-timer">00:${String(remSec).padStart(2,'0')}</div>
+                    <div id="v-sub-area">
+            `;
+
+            if(myVote) {
+                html += `<p style="color:#4ecca3; font-weight:bold;">あなたの投票表明は完了しました。</p><p class="info-text">他のプレイヤーの挙手・投票を待っています...</p>`;
+            } else if(!myRaised) {
+                html += `<button id="raise-hand-btn" style="background-color:#4ecca3; color:#1a1a2e; font-weight:bold; font-size:1.2rem; padding:15px 30px;" onclick="raiseHand()">✋ 挙手する</button>`;
+            } else {
+                html += `<p style="color:#4ecca3; font-weight:bold;">挙手しました！順番を確定しています...</p>`;
+            }
+            html += `</div></div>`;
+            area.innerHTML = html;
+
+        } else if(vState.phase === 'notice') {
+            let speaker = data.players.find(p => p.id === vState.speakerId);
+            area.innerHTML = `
+                <div style="font-size:1.8rem; color:#f9ed69; font-weight:bold; margin:30px 0;">
+                    ${speaker ? speaker.name : ''} さんが投票します
+                </div>
+                <p class="info-text">まもなく30秒間の投票理由時間が始まります...</p>
+            `;
+
+            if(isHost && !window.noticeTimerStarted) {
+                window.noticeTimerStarted = true;
+                setTimeout(async () => {
+                    window.noticeTimerStarted = false;
+                    let freshData = (await db.collection("rooms").doc(roomId).get()).data();
+                    let fState = freshData.standardVoteState;
+                    if(fState && fState.phase === 'notice') {
+                        fState.phase = 'speaking';
+                        fState.speechEndTime = Date.now() + 30000;
+                        await db.collection("rooms").doc(roomId).update({ standardVoteState: fState });
+                    }
+                }, 3000);
+            }
+
+        } else if(vState.phase === 'speaking') {
+            let speaker = data.players.find(p => p.id === vState.speakerId);
+            let isSpeaker = (myPlayerId === vState.speakerId);
+            let remSec = Math.max(0, Math.floor(((vState.speechEndTime || 0) - now) / 1000));
+
+            let html = `
+                <p><b>${speaker ? speaker.name : ''} さんの投票表明中</b></p>
+                <div class="timer-display" id="shared-vote-timer">00:${String(remSec).padStart(2,'0')}</div>
+            `;
+
+            if(isAlive(data, myPlayerId)) {
+                if(isSpeaker) {
+                    html += `<p class="info-text">投票先を選択し、理由を話したら「投票表明を終える」を押してください：</p>`;
+                    let currentChoice = selectedVoteTargetId || (vState.votes && vState.votes[myPlayerId]) || "";
+                    
+                    data.players.filter(p => p.id !== myPlayerId && data.alivePlayers[p.id]).forEach(p => {
+                        let isSel = (currentChoice === p.id);
+                        html += `<button class="action-btn ${isSel ? 'selected-target' : ''}" onclick="selectStandardVoteChoice('${p.id}')">${p.name} に投票 ${isSel ? '✓ 選択中' : ''}</button><br>`;
+                    });
+                    html += `<button style="background-color:#4ecca3; color:#1a1a2e; font-weight:bold; margin-top:15px;" onclick="finishSpeech()">投票表明を終える</button>`;
+                } else {
+                    html += `<p class="info-text">${speaker ? speaker.name : ''} さんが投票理由を述べています...</p>`;
+                }
+            } else {
+                html += `<p style="color:#e94560;">あなたは死亡しています。</p>`;
+            }
+
+            area.innerHTML = html;
+
+        } else if(vState.phase === 'runoff_notice') {
+            let runoffNames = (vState.runoffList || []).map(id => data.players.find(p => p.id === id)?.name).join(' と ');
+            area.innerHTML = `
+                <div style="font-size:1.5rem; color:#f9ed69; font-weight:bold; margin:20px 0;">
+                    最多得票が同数でした。<br>${runoffNames} の決戦弁明を行います。
+                </div>
+                <p class="info-text">まもなく決戦弁明が始まります...</p>
+            `;
+
+            if(isHost && !window.runoffNoticeStarted) {
+                window.runoffNoticeStarted = true;
+                setTimeout(async () => {
+                    window.runoffNoticeStarted = false;
+                    let freshData = (await db.collection("rooms").doc(roomId).get()).data();
+                    let fState = freshData.standardVoteState;
+                    if(fState && fState.phase === 'runoff_notice') {
+                        fState.phase = 'runoff_speech';
+                        fState.runoffIndex = 0;
+                        fState.speakerId = fState.runoffOrder[0];
+                        fState.speechEndTime = Date.now() + 60000;
+                        await db.collection("rooms").doc(roomId).update({ standardVoteState: fState });
+                    }
+                }, 3000);
+            }
+
+        } else if(vState.phase === 'runoff_speech') {
+            let speaker = data.players.find(p => p.id === vState.speakerId);
+            let isSpeaker = (myPlayerId === vState.speakerId);
+            let remSec = Math.max(0, Math.floor(((vState.speechEndTime || 0) - now) / 1000));
+            let m = Math.floor(remSec / 60);
+            let s = remSec % 60;
+
+            let html = `
+                <p><b>決戦弁明 (${(vState.runoffIndex || 0) + 1}/${vState.runoffOrder.length}): ${speaker ? speaker.name : ''} さん</b></p>
+                <div class="timer-display" id="shared-vote-timer">${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}</div>
+            `;
+
+            if(isAlive(data, myPlayerId)) {
+                if(isSpeaker) {
+                    html += `<p class="info-text">1分間の弁明をどうぞ。終わったら「決戦弁明を終える」を押してください。</p>`;
+                    html += `<button style="background-color:#4ecca3; color:#1a1a2e; font-weight:bold; margin-top:15px;" onclick="finishRunoffSpeech()">決戦弁明を終える</button>`;
+                } else {
+                    html += `<p class="info-text">${speaker ? speaker.name : ''} さんが弁明中です...</p>`;
+                }
+            } else {
+                html += `<p style="color:#e94560;">あなたは死亡しています。</p>`;
+            }
+
+            area.innerHTML = html;
+
+        } else if(vState.phase === 'runoff_voting') {
+            let html = `<p><b>決選投票 (対象者以外による一斉投票)</b></p>`;
+            let isRunoffTarget = vState.runoffList.includes(myPlayerId);
+
+            if(!isAlive(data, myPlayerId)) {
+                html += `<p style="color:#e94560;">あなたは死亡しています。</p>`;
+            } else if(isRunoffTarget) {
+                html += `<p style="color:#f9ed69;">あなたは決戦対象者のため、今回の再投票には参加できません。他のプレイヤーの投票を待っています...</p>`;
+            } else {
+                let currentChoice = selectedVoteTargetId || (vState.votes && vState.votes[myPlayerId]);
+                if(!vState.votes || !vState.votes[myPlayerId]) {
+                    html += `<p class="info-text">決戦対象者のどちらかに投票してください：</p>`;
+                    vState.runoffList.forEach(id => {
+                        let p = data.players.find(x => x.id === id);
+                        if(p) {
+                            let isSel = (currentChoice === p.id);
+                            html += `<button class="action-btn ${isSel ? 'selected-target' : ''}" onclick="submitRunoffVote('${p.id}')">${p.name} に投票 ${isSel ? '✓ 選択中' : ''}</button><br>`;
+                        }
+                    });
+                } else {
+                    html += `<p style="color:#4ecca3;">投票完了しました。全員の投票を待っています...</p>`;
+                }
+            }
+            area.innerHTML = html;
+        }
+    }
+
+    function updateVotingPhaseDynamic(data, vState) {
+        let timerElem = document.getElementById('shared-vote-timer');
+        if (timerElem && (vState.phase === 'handraise' || vState.phase === 'speaking' || vState.phase === 'runoff_speech')) {
+            let targetTime = vState.phase === 'handraise' ? vState.handraiseEndTime : vState.speechEndTime;
+            let remSec = Math.max(0, Math.floor(((targetTime || 0) - Date.now()) / 1000));
+            if (vState.phase === 'runoff_speech') {
+                let m = Math.floor(remSec / 60);
+                let s = remSec % 60;
+                timerElem.innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+            } else {
+                timerElem.innerText = `00:${String(remSec).padStart(2,'0')}`;
+            }
+        }
+
+        let votedCountSpan = document.getElementById('voted-count-span');
+        if (votedCountSpan && vState.phase === 'handraise' && vState.votes) {
+            votedCountSpan.innerText = Object.keys(vState.votes).length;
+        }
+    }
+
+    function startVotePhaseTimer(data) {
+        if(votePhaseTimerInterval) clearInterval(votePhaseTimerInterval);
+
+        votePhaseTimerInterval = setInterval(async () => {
+            if (!localRoomData || localRoomData.status !== "voting" || !localRoomData.standardVoteState) {
+                clearInterval(votePhaseTimerInterval);
+                votePhaseTimerInterval = null;
+                return;
+            }
+
+            let vState = localRoomData.standardVoteState;
+            let now = Date.now();
+
+            let timerElem = document.getElementById('shared-vote-timer');
+            if (timerElem) {
+                let targetTime = (vState.phase === 'handraise') ? vState.handraiseEndTime : vState.speechEndTime;
+                let remSec = Math.max(0, Math.floor(((targetTime || 0) - now) / 1000));
+                if (vState.phase === 'runoff_speech') {
+                    let m = Math.floor(remSec / 60);
+                    let s = remSec % 60;
+                    timerElem.innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+                } else {
+                    timerElem.innerText = `00:${String(remSec).padStart(2,'0')}`;
+                }
+            }
+
+            if (isHost) {
+                let freshData = (await db.collection("rooms").doc(roomId).get()).data();
+                if (!freshData || freshData.status !== "voting" || !freshData.standardVoteState) return;
+                let fState = freshData.standardVoteState;
+
+                if (fState.phase === 'handraise') {
+                    let currentRem = Math.max(0, Math.floor(((fState.handraiseEndTime || 0) - now) / 1000));
+                    let hands = fState.hands || {};
+                    let votedList = Object.keys(fState.votes || {});
+                    let unvotedLiving = freshData.players.filter(p => freshData.alivePlayers[p.id] && !votedList.includes(p.id)).map(p => p.id);
+                    let validHands = Object.entries(hands).filter(entry => unvotedLiving.includes(entry[0])).sort((a,b) => a[1] - b[1]);
+
+                    if (validHands.length > 0 || currentRem <= 0) {
+                        let chosenId = validHands.length > 0 ? validHands[0][0] : unvotedLiving[Math.floor(Math.random() * unvotedLiving.length)];
+                        fState.phase = 'notice';
+                        fState.speakerId = chosenId;
+                        fState.noticeEndTime = Date.now() + 3000;
+                        await db.collection("rooms").doc(roomId).update({ standardVoteState: fState });
+                    }
+                } else if (fState.phase === 'speaking') {
+                    let currentRem = Math.max(0, Math.floor(((fState.speechEndTime || 0) - now) / 1000));
+                    if (currentRem <= 0) {
+                        let currentSpeaker = fState.speakerId;
+                        if (!fState.votes) fState.votes = {};
+                        if (!fState.votes[currentSpeaker]) {
+                            let possibleTargets = freshData.players.filter(p => p.id !== currentSpeaker && freshData.alivePlayers[p.id]).map(p => p.id);
+                            fState.votes[currentSpeaker] = possibleTargets[Math.floor(Math.random() * possibleTargets.length)];
+                        }
+                        advanceStandardVoting(freshData, fState);
+                    }
+                } else if (fState.phase === 'runoff_speech') {
+                    let currentRem = Math.max(0, Math.floor(((fState.speechEndTime || 0) - now) / 1000));
+                    if (currentRem <= 0) {
+                        let nextIdx = (fState.runoffIndex || 0) + 1;
+                        if (nextIdx < fState.runoffOrder.length) {
+                            fState.runoffIndex = nextIdx;
+                            fState.speakerId = fState.runoffOrder[nextIdx];
+                            fState.speechEndTime = Date.now() + 60000;
+                            await db.collection("rooms").doc(roomId).update({ standardVoteState: fState });
+                        } else {
+                            fState.phase = 'runoff_voting';
+                            fState.votes = {};
+                            await db.collection("rooms").doc(roomId).update({ standardVoteState: fState });
+                        }
+                    }
+                }
+            }
+        }, 500);
+    }
+
+    function isAlive(data, pId) {
+        return data.alivePlayers && data.alivePlayers[pId];
+    }
+
+    async function initStandardVoteState(data) {
+        let initialState = {
+            phase: 'handraise',
+            hands: {},
+            votes: {},
+            speakerId: null,
+            handraiseEndTime: Date.now() + 10000,
+            noticeEndTime: 0,
+            speechEndTime: 0,
+            runoffList: [],
+            runoffOrder: [],
+            runoffIndex: 0
+        };
+        await db.collection("rooms").doc(roomId).update({ standardVoteState: initialState });
+    }
+
+    async function raiseHand() {
+        let fData = (await db.collection("rooms").doc(roomId).get()).data();
+        let vState = fData.standardVoteState;
+        if(!vState || vState.phase !== 'handraise') return;
+        if(!vState.hands) vState.hands = {};
+        if(!vState.hands[myPlayerId]) {
+            vState.hands[myPlayerId] = Date.now();
+            await db.collection("rooms").doc(roomId).update({ standardVoteState: vState });
+        }
+    }
+
+    async function selectStandardVoteChoice(targetId) {
+        selectedVoteTargetId = targetId;
+        
+        let fData = (await db.collection("rooms").doc(roomId).get()).data();
+        let vState = fData.standardVoteState;
+        if(!vState || vState.speakerId !== myPlayerId) return;
+        
+        let updateObj = {};
+        updateObj[`standardVoteState.votes.${myPlayerId}`] = targetId;
+        await db.collection("rooms").doc(roomId).update(updateObj);
+        
+        renderStandardVotingPhase(localRoomData);
+    }
+
+    async function finishSpeech() {
+        if(votePhaseTimerInterval) { clearInterval(votePhaseTimerInterval); votePhaseTimerInterval = null; }
+
+        let fData = (await db.collection("rooms").doc(roomId).get()).data();
+        let vState = fData.standardVoteState;
+        if(!vState || vState.speakerId !== myPlayerId) return;
+
+        if(!vState.votes) vState.votes = {};
+        if(!vState.votes[vState.speakerId]) {
+            let choice = selectedVoteTargetId;
+            if(!choice) {
+                let possibleTargets = fData.players.filter(p => p.id !== vState.speakerId && fData.alivePlayers[p.id]).map(p => p.id);
+                choice = possibleTargets[Math.floor(Math.random() * possibleTargets.length)];
+            }
+            vState.votes[vState.speakerId] = choice;
+        }
+
+        selectedVoteTargetId = null;
+        await advanceStandardVoting(fData, vState);
+    }
+
+    async function finishRunoffSpeech() {
+        if(votePhaseTimerInterval) { clearInterval(votePhaseTimerInterval); votePhaseTimerInterval = null; }
+
+        let fData = (await db.collection("rooms").doc(roomId).get()).data();
+        let vState = fData.standardVoteState;
+        if(!vState || vState.speakerId !== myPlayerId) return;
+
+        let nextIdx = (vState.runoffIndex || 0) + 1;
+        if(nextIdx < vState.runoffOrder.length) {
+            vState.runoffIndex = nextIdx;
+            vState.speakerId = vState.runoffOrder[nextIdx];
+            vState.speechEndTime = Date.now() + 60000;
+            await db.collection("rooms").doc(roomId).update({ standardVoteState: fState });
+        } else {
+            vState.phase = 'runoff_voting';
+            vState.votes = {};
+            await db.collection("rooms").doc(roomId).update({ standardVoteState: fState });
+        }
+    }
+
+    async function submitRunoffVote(targetId) {
+        selectedVoteTargetId = targetId;
+        
+        let fData = (await db.collection("rooms").doc(roomId).get()).data();
+        let vState = fData.standardVoteState;
+        if(!vState) return;
+
+        let updateObj = {};
+        updateObj[`standardVoteState.votes.${myPlayerId}`] = targetId;
+        await db.collection("rooms").doc(roomId).update(updateObj);
+
+        let runoffTargets = vState.runoffList;
+        let voters = fData.players.filter(p => fData.alivePlayers[p.id] && !runoffTargets.includes(p.id)).map(p => p.id);
+        let updatedVotes = { ...(vState.votes || {}), [myPlayerId]: targetId };
+        let votedCount = voters.filter(id => updatedVotes[id] !== undefined).length;
+
+        if(votedCount >= voters.length) {
+            vState.votes = updatedVotes;
+            resolveStandardRunoffVotes(fData, vState);
+        } else {
+            renderStandardVotingPhase(localRoomData);
+        }
+    }
+
+    async function advanceStandardVoting(data, vState) {
+        let livingIds = data.players.filter(p => data.alivePlayers[p.id]).map(p => p.id);
+        let votedSpeakers = Object.keys(vState.votes || {});
+
+        if(votedSpeakers.length < livingIds.length) {
+            vState.phase = 'handraise';
+            vState.hands = {};
+            vState.speakerId = null;
+            vState.handraiseEndTime = Date.now() + 10000;
+            lastRenderKey = "";
+            await db.collection("rooms").doc(roomId).update({ standardVoteState: vState });
+        } else {
+            resolveStandardVotes(data, vState);
+        }
+    }
+
+    async function resolveStandardVotes(data, vState) {
+        let votes = vState.votes || {};
+        let voteCounts = {};
+        data.players.forEach(p => voteCounts[p.id] = 0);
+        Object.values(votes).forEach(t => { if(voteCounts[t] !== undefined) voteCounts[t]++; });
+
+        let maxV = 0;
+        Object.values(voteCounts).forEach(c => { if(c > maxV) maxV = c; });
+
+        let topTargets = [];
+        Object.keys(voteCounts).forEach(id => { if(voteCounts[id] === maxV) topTargets.push(id); });
+
+        let livingCount = data.players.filter(p => data.alivePlayers[p.id]).length;
+        let votersCount = livingCount - topTargets.length;
+        if (topTargets.length > 1 && votersCount === 0) {
+            let tieAction = data.stdTieAction || "none";
+            if(tieAction === "random") {
+                let chosen = topTargets[Math.floor(Math.random() * topTargets.length)];
+                executeHangStandard(data, chosen, votes);
+            } else {
+                executeHangStandard(data, null, votes);
+            }
+            return;
+        }
+
+        if(topTargets.length === 1) {
+            executeHangStandard(data, topTargets[0], votes);
+        } else if(topTargets.length > 1) {
+            let shuffledRunoff = [...topTargets];
+            shuffledRunoff.sort(() => Math.random() - 0.5);
+
+            vState.phase = 'runoff_notice';
+            vState.runoffList = topTargets;
+            vState.runoffOrder = shuffledRunoff;
+            lastRenderKey = "";
+            await db.collection("rooms").doc(roomId).update({ standardVoteState: vState });
+        }
+    }
+
+    async function resolveStandardRunoffVotes(data, vState) {
+        let votes = vState.votes || {};
+        let voteCounts = {};
+        vState.runoffList.forEach(id => voteCounts[id] = 0);
+        Object.values(votes).forEach(t => { if(voteCounts[t] !== undefined) voteCounts[t]++; });
+
+        let maxV = 0;
+        Object.values(voteCounts).forEach(c => { if(c > maxV) maxV = c; });
+
+        let topTargets = [];
+        Object.keys(voteCounts).forEach(id => { if(voteCounts[id] === maxV) topTargets.push(id); });
+
+        if(topTargets.length === 1) {
+            executeHangStandard(data, topTargets[0], votes);
+        } else {
+            let tieAction = data.stdTieAction || "none";
+            if(tieAction === "random") {
+                let chosen = topTargets[Math.floor(Math.random() * topTargets.length)];
+                executeHangStandard(data, chosen, votes);
+            } else {
+                executeHangStandard(data, null, votes);
+            }
+        }
+    }
+
+    async function executeHangStandard(data, hangedId, votesMap) {
+        lastRenderKey = "";
+        let currentDay = data.dayCount || 1;
+        let logDetails = [];
+        Object.keys(votesMap || {}).forEach(voterId => {
+            let voter = data.players.find(p => p.id === voterId);
+            let targetId = votesMap[voterId];
+            let target = data.players.find(p => p.id === targetId);
+            if(voter && target) {
+                logDetails.push({ voterName: voter.name, targetName: target.name });
+            }
+        });
+
+        let newVoteLogs = data.voteLogs || [];
+        newVoteLogs.push({
+            day: currentDay,
+            hangedId: hangedId,
+            hangedName: hangedId ? (data.players.find(p => p.id === hangedId)?.name || "不明") : null,
+            details: logDetails
+        });
+
+        let updates = {
+            voteLogs: newVoteLogs,
+            standardVoteState: null
+        };
+
+        if(hangedId) {
+            updates.status = "last_words";
+            updates.lastHangedId = hangedId;
+            updates.lastWordsEndTime = Date.now() + 60000;
+        } else {
+            let aliveObj = { ...data.alivePlayers };
+            updates.status = "vote_announce_hold";
+            updates.alivePlayers = aliveObj;
+            updates.lastHangedId = null;
+        }
+
+        await db.collection("rooms").doc(roomId).update(updates);
+    }
+
+    function renderLastWordsPhase(data) {
+        const area = document.getElementById('action-area');
+        const hangedP = data.players.find(p => p.id === data.lastHangedId);
+        const isTarget = (myPlayerId === data.lastHangedId);
+        const now = Date.now();
+        const remSec = Math.max(0, Math.floor(((data.lastWordsEndTime || 0) - now) / 1000));
+        const m = Math.floor(remSec / 60);
+        const s = remSec % 60;
+
+        let html = `
+            <div style="font-size:1.5rem; color:#e94560; font-weight:bold; margin-bottom:10px;">
+                📢 ${hangedP ? hangedP.name : ''} さんの遺言タイム
+            </div>
+            <div class="timer-display" id="last-words-timer">${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}</div>
+        `;
+
+        if(isTarget) {
+            html += `<p class="info-text">追放が決定しました。1分間の遺言をどうぞ。終わったら「遺言を終える」を押してください。</p>`;
+            html += `<button style="background-color:#4ecca3; color:#1a1a2e; font-weight:bold; margin-top:15px;" onclick="finishLastWords()">遺言を終える</button>`;
+        } else {
+            html += `<p class="info-text">${hangedP ? hangedP.name : ''} さんが遺言を述べています...</p>`;
+        }
+
+        area.innerHTML = html;
+
+        if (isHost && !window.lastWordsTimerIntervalSet) {
+            window.lastWordsTimerIntervalSet = true;
+            if(window.lwInterval) clearInterval(window.lwInterval);
+            window.lwInterval = setInterval(async () => {
+                let freshData = (await db.collection("rooms").doc(roomId).get()).data();
+                if(!freshData || freshData.status !== "last_words") {
+                    clearInterval(window.lwInterval);
+                    window.lwInterval = null;
+                    window.lastWordsTimerIntervalSet = false;
+                    return;
+                }
+                let curRem = Math.max(0, Math.floor(((freshData.lastWordsEndTime || 0) - Date.now()) / 1000));
+                let tElem = document.getElementById('last-words-timer');
+                if(tElem) {
+                    let mm = Math.floor(curRem / 60);
+                    let ss = curRem % 60;
+                    tElem.innerText = `${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+                }
+
+                if(curRem <= 0) {
+                    clearInterval(window.lwInterval);
+                    window.lwInterval = null;
+                    window.lastWordsTimerIntervalSet = false;
+                    completeLastWordsTransition(freshData);
+                }
+            }, 500);
+        }
+    }
+
+    async function finishLastWords() {
+        if(window.lwInterval) { clearInterval(window.lwInterval); window.lwInterval = null; }
+        window.lastWordsTimerIntervalSet = false;
+        let freshData = (await db.collection("rooms").doc(roomId).get()).data();
+        if(freshData && freshData.status === "last_words") {
+            await completeLastWordsTransition(freshData);
+        }
+    }
+
+    async function completeLastWordsTransition(data) {
+        if(!isHost && data.status !== "last_words") return;
+        let aliveObj = { ...data.alivePlayers };
+        if(data.lastHangedId) {
+            aliveObj[data.lastHangedId] = false;
+        }
+        await db.collection("rooms").doc(roomId).update({
+            status: "vote_announce_hold",
+            alivePlayers: aliveObj
+        });
+    }
+
+    /* 普通の人狼：夜の行動描画 */
+    function renderStandardNight(data) {
+        const area = document.getElementById('action-area');
+        const myRole = data.finalRoles[myPlayerId];
+        const alive = data.alivePlayers[myPlayerId];
+        const day = data.dayCount || 1;
+
+        if (currentNightDayTracked !== day) {
+            currentNightDayTracked = day;
+            myNightActionResultText = "";
+            myNightDoneLocal = false;
+            selectedVoteTargetId = null;
+        }
+
+        const isDone = myNightDoneLocal || (data.nightDone && data.nightDone[myPlayerId]);
+
+        if(!alive) {
+            let key = "night_dead_" + day;
+            if (lastRenderKey !== key) {
+                lastRenderKey = key;
+                area.innerHTML = `<p style="color:#e94560;">あなたは追放/犠牲になりました。観戦中...</p>
+                                  <div style="font-size:1.2rem; color:#f9ed69; margin-top:10px;">夜タイマー残り: <span id="night-timer">--:--</span></div>
+                                  ${renderVoteLogsHtml(data)}`;
+            }
+            return;
+        }
+
+        let html = `
+            <div style="border-bottom:1px solid #334257; padding-bottom:10px; margin-bottom:10px;">
+                <p>あなたの役職:</p>
+                <p class="role-name">${roleIcons[myRole] || myRole}</p>
+                <p class="info-text">${roleDetails[myRole] || ''}</p>
+            </div>
+            <div style="font-size:1.2rem; color:#f9ed69; margin-bottom:15px;">夜タイマー残り: <span id="night-timer">--:--</span></div>
+        `;
+
+        const livingOthers = data.players.filter(p => p.id !== myPlayerId && data.alivePlayers[p.id]);
+
+        if(!isDone) {
+            if(myRole === "人狼") {
+                if(day === 1) {
+                    let wolves = data.players.filter(p => data.finalRoles[p.id] === "人狼" && p.id !== myPlayerId);
+                    let wNames = wolves.length > 0 ? wolves.map(w => w.name).join(', ') : 'なし（一匹狼）';
+                    myNightActionResultText = `仲間の人狼: ${wNames}`;
+                    html += `<p>初日の夜です。襲撃はありません。</p><p style="color:#f9ed69;">仲間の人狼: <b>${wNames}</b></p>`;
+                    html += renderWolfChatArea(data);
+                    html += `<button onclick="completeNightAction('仲間の人狼: ' + '${wNames}')" style="margin-top:10px;">確認完了</button>`;
+                } else {
+                    let candidates = livingOthers.filter(p => data.finalRoles[p.id] !== "人狼");
+                    if(data.wolfReVote) {
+                        let reCands = data.players.filter(p => data.wolfReVoteCandidates.includes(p.id));
+                        let cNames = reCands.map(c => c.name).join(' と ');
+                        html += `<p style="color:#e94560;">${cNames} が襲撃対象になりました。どちらを襲撃しますか？</p>`;
+                        candidates = reCands;
+                    } else {
+                        html += `<p class="info-text">襲撃するプレイヤーを選択してください：</p>`;
+                    }
+
+                    let currentAttackTarget = (data.nightActions && data.nightActions[myPlayerId] && data.nightActions[myPlayerId].attackTarget) || selectedVoteTargetId;
+                    candidates.forEach(p => {
+                        let isSel = (currentAttackTarget === p.id);
+                        html += `<button class="action-btn ${isSel ? 'selected-target' : ''}" onclick="submitNightAction('attackTarget', '${p.id}', '${p.name}を襲撃')">${p.name} を襲撃 ${isSel ? '✓ 選択中' : ''}</button><br>`;
+                    });
+                    html += renderWolfChatArea(data);
+                }
+            } else if(myRole === "狂信者") {
+                let wolves = data.players.filter(p => data.finalRoles[p.id] === "人狼");
+                let wNames = wolves.map(w => w.name).join(', ');
+                myNightActionResultText = `人狼の正体: ${wNames}`;
+                html += `<p>人狼の正体: <b style="color:#d32f2f;">${wNames}</b></p>`;
+                html += `<button onclick="completeNightAction('人狼の正体: ' + '${wNames}')">確認完了</button>`;
+            } else if(myRole === "占い師") {
+                if(day === 1) {
+                    if(!myNightActionResultText) {
+                        let nonWolves = data.players.filter(p => p.id !== myPlayerId && data.finalRoles[p.id] !== "人狼");
+                        let randP = nonWolves[Math.floor(Math.random() * nonWolves.length)];
+                        myNightActionResultText = `${randP.name} ➔ 〇（白）`;
+                        addRoleHistory(`1日目: ${randP.name} ➔ 〇（白）`);
+                    }
+                    html += `<p style="color:#4ecca3; font-weight:bold; font-size:1.1rem;">初日占い結果: ${myNightActionResultText}</p>`;
+                    html += `<button onclick="completeNightAction('初日占い: ' + '${myNightActionResultText}')">確認完了</button>`;
+                } else {
+                    html += `<p class="info-text">占うプレイヤーを選択してください：</p>`;
+                    let currentSeerTarget = (data.nightActions && data.nightActions[myPlayerId] && data.nightActions[myPlayerId].seerTarget) || selectedVoteTargetId;
+                    livingOthers.forEach(p => {
+                        let isSel = (currentSeerTarget === p.id);
+                        html += `<button class="action-btn ${isSel ? 'selected-target' : ''}" onclick="executeStandardSeer('${p.id}', '${p.name}', ${day})">${p.name} を占う ${isSel ? '✓ 選択中' : ''}</button><br>`;
+                    });
+                }
+                html += renderRoleHistoryHtml();
+            } else if(myRole === "霊媒師") {
+                if(day === 1) {
+                    myNightActionResultText = "初日のため対象なし";
+                    html += `<p class="info-text">初日の夜は霊媒対象がいません。</p>`;
+                    html += `<button onclick="completeNightAction('霊媒結果: なし')">確認完了</button>`;
+                } else if(data.lastHangedId) {
+                    let hangedP = data.players.find(p => p.id === data.lastHangedId);
+                    let isW = data.finalRoles[data.lastHangedId] === "人狼";
+                    let resStr = isW ? "●（人狼）" : "〇（人狼ではない）";
+                    myNightActionResultText = `${hangedP.name} ➔ ${resStr}`;
+                    addRoleHistory(`${day}日目: ${hangedP.name} ➔ ${resStr}`);
+                    html += `<p>前日追放された ${hangedP.name} は <b style="color:#f9ed69;">${resStr}</b> でした。</p>`;
+                    html += `<button onclick="completeNightAction('霊媒結果: ' + '${hangedP.name} ➔ ' + '${resStr}')">確認完了</button>`;
+                } else {
+                    myNightActionResultText = "前日追放者なし";
+                    html += `<p class="info-text">前日の追放者はいませんでした。</p>`;
+                    html += `<button onclick="completeNightAction('霊媒結果: なし')">確認完了</button>`;
+                }
+                html += renderRoleHistoryHtml();
+            } else if(myRole === "狩人") {
+                if(day === 1) {
+                    myNightActionResultText = "初日のため護衛なし";
+                    html += `<p>初日の夜は護衛を行いません。</p>`;
+                    html += `<button onclick="completeNightAction('初日護衛なし')">確認完了</button>`;
+                } else {
+                    let lastT = (data.lastHunterTarget && data.lastHunterTarget[myPlayerId]) || null;
+                    let currentHunterTarget = (data.nightActions && data.nightActions[myPlayerId] && data.nightActions[myPlayerId].hunterTarget) || selectedVoteTargetId;
+                    html += `<p class="info-text">護衛するプレイヤーを選択してください（自分不可・連護不可）：</p>`;
+                    livingOthers.filter(p => p.id !== lastT).forEach(p => {
+                        let isSel = (currentHunterTarget === p.id);
+                        html += `<button class="action-btn ${isSel ? 'selected-target' : ''}" onclick="submitNightAction('hunterTarget', '${p.id}', '${p.name}を護衛')">${p.name} を護衛 ${isSel ? '✓ 選択中' : ''}</button><br>`;
+                    });
+                }
+            } else {
+                myNightActionResultText = "能力行使なし";
+                html += `<p class="info-text">夜の能力はありません。</p>`;
+                html += `<button onclick="completeNightAction('能力行使なし')">確認完了</button>`;
+            }
+        } else {
+            html += `
+                <div style="background:#0f3460; border:1px solid #4ecca3; padding:15px; border-radius:8px; margin-top:10px;">
+                    <p style="color:#4ecca3; font-weight:bold; margin-top:0;">✅ 夜の確認・行動が完了しています</p>
+                    <p style="margin:4px 0;"><b>あなたの行動結果:</b> ${myNightActionResultText || '確認済み'}</p>
+                </div>
+            `;
+            if(myRole === "占い師" || myRole === "霊媒師") {
+                html += renderRoleHistoryHtml();
+            }
+            html += `<p class="info-text" style="margin-top:15px;">夜タイマー終了までお待ちください...</p>`;
+        }
+
+        html += renderVoteLogsHtml(data);
+        area.innerHTML = html;
+    }
+
+    function addRoleHistory(entryStr) {
+        if (!myRoleHistory.includes(entryStr)) {
+            myRoleHistory.push(entryStr);
+        }
+    }
+
+    function renderRoleHistoryHtml() {
+        if (myRoleHistory.length === 0) return "";
+        let listItems = myRoleHistory.map(h => `<li style="margin:3px 0;">${h}</li>`).join('');
+        return `
+            <div class="history-box">
+                <p style="margin:0 0 6px 0; font-weight:bold; color:#4ecca3;">📜 これまでの占い・霊媒履歴</p>
+                <ul style="margin:0; padding-left:20px;">${listItems}</ul>
+            </div>
+        `;
+    }
+
+    function renderVoteLogsHtml(data) {
+        let logs = data.voteLogs || [];
+        if (logs.length === 0) return "";
+
+        let logsHtml = logs.map(l => {
+            let hangedMsg = l.hangedName ? `<span style="color:#e94560; font-weight:bold;">${l.hangedName} さんが追放されました</span>` : `<span style="color:#4ecca3;">誰も追放されませんでした</span>`;
+            let detailsStr = l.details.map(d => `${d.voterName} ➔ ${d.targetName}`).join(', ');
+            return `
+                <div style="border-bottom:1px dashed #334257; padding-bottom:6px; margin-bottom:6px;">
+                    <b>【${l.day}日目 投票結果】</b>: ${hangedMsg}<br>
+                    <span style="font-size:0.75rem; color:#aaa;">投票内訳: ${detailsStr}</span>
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="history-box" style="border-color:#f9ed69;">
+                <p style="margin:0 0 6px 0; font-weight:bold; color:#f9ed69;">🗳️ これまでの投票履歴</p>
+                ${logsHtml}
+            </div>
+        `;
+    }
+
+    function renderWolfChatArea(data) {
+        let logs = data.wolfChatLogs || [];
+        let logHtml = logs.map(l => `<div><b>${l.sender}:</b> ${l.msg}</div>`).join('');
+        return `
+            <div class="wolf-chat-box">
+                <p style="margin:2px 0; font-size:0.8rem; color:#d32f2f; font-weight:bold;">人狼専用リアルタイムチャット</p>
+                <div class="wolf-chat-logs" id="wolf-chat-logs">${logHtml}</div>
+                <input type="text" id="wolf-chat-input" placeholder="メッセージを入力" style="width:70%;">
+                <button onclick="sendWolfChat()" style="padding:6px 10px; font-size:0.8rem;">送信</button>
+            </div>
+        `;
+    }
+
+    async function sendWolfChat() {
+        let input = document.getElementById('wolf-chat-input');
+        if(!input || !input.value.trim()) return;
+        let msg = input.value.trim();
+        input.value = "";
+
+        let logs = localRoomData.wolfChatLogs || [];
+        logs.push({ sender: myName, msg: msg });
+        await db.collection("rooms").doc(roomId).update({ wolfChatLogs: logs });
+    }
+
+    async function executeStandardSeer(targetId, targetName, day) {
+        selectedVoteTargetId = targetId;
+        let isW = localRoomData.finalRoles[targetId] === "人狼";
+        let res = isW ? "●（人狼）" : "〇（人狼ではない）";
+        myNightActionResultText = `${targetName} ➔ ${res}`;
+        addRoleHistory(`${day}日目: ${targetName} ➔ ${res}`);
+
+        let updateObj = {};
+        updateObj[`nightActions.${myPlayerId}.seerTarget`] = targetId;
+        await db.collection("rooms").doc(roomId).update(updateObj);
+
+        await completeNightAction(`占い結果: ${targetName} ➔ ${res}`);
+    }
+
+    async function submitNightAction(actionType, targetId, resultText) {
+        selectedVoteTargetId = targetId;
+        myNightActionResultText = resultText;
+
+        let updateObj = {};
+        updateObj[`nightActions.${myPlayerId}.${actionType}`] = targetId;
+        await db.collection("rooms").doc(roomId).update(updateObj);
+
+        await completeNightAction(resultText);
+    }
+
+    function renderWordWolfNight(data) {
+        const area = document.getElementById('action-area');
+        const wwWord = data.wordWolfData.assignments[myPlayerId] || "???";
+        const isWolf = data.initialRoles[myPlayerId] === "人狼";
+        const showRole = (data.wordWolfConfig && data.wordWolfConfig.showRole !== undefined) ? data.wordWolfConfig.showRole : true;
+
+        myNightActionResultText = `お題: ${wwWord}`;
+
+        let roleExplanation = "";
+        if(showRole) {
+            roleExplanation = isWolf 
+                ? 'あなたは【人狼（少数派のお題）】です。村人にバレないように立ち回りましょう！' 
+                : 'あなたは【村人（多数派のお題）】です。人狼を探し出しましょう！';
+        } else {
+            roleExplanation = '自分の役職は非表示設定です。自分が多数派なのか少数派（ウルフ）なのか会話から探りましょう！';
+        }
+
+        let html = `
+            <div style="border-bottom:1px solid #334257; padding-bottom:10px; margin-bottom:10px;">
+                <p>あなたに配られたお題:</p>
+                <p class="role-name" style="color:#f9ed69; font-size:2rem;">${wwWord}</p>
+                <p class="info-text">${roleExplanation}</p>
+            </div>
+            <button onclick="completeNightAction('お題: ' + '${wwWord}')">確認完了</button>
+        `;
+        area.innerHTML = html;
     }
 
     function renderNightActionsHub(data) {
@@ -517,15 +1958,17 @@
         `;
 
         if(myRole === "占い師") {
-            html += `<p class="info-text">🔮 占い師の能力対象を選んでください：</p>`;
+            html += `<p class="info-text">占い師の能力対象を選んでください：</p>`;
             players.forEach(p => {
-                html += `<button class="action-btn" onclick="executeOnlineSeer('${p.id}', '${p.name}')">${p.name} を占う</button><br>`;
+                let isSel = (selectedVoteTargetId === p.id);
+                html += `<button class="action-btn ${isSel ? 'selected-target' : ''}" onclick="executeOnlineSeer('${p.id}', '${p.name}')">${p.name} を占う ${isSel ? '✓ 選択中' : ''}</button><br>`;
             });
             html += `<button class="action-btn" style="border-color:#f9ed69;" onclick="executeOnlineSeerCentral()">中央の2枚を占う</button>`;
         } else if(myRole === "怪盗") {
-            html += `<p class="info-text">🦹 怪盗の能力対象を選んでください：</p>`;
+            html += `<p class="info-text">怪盗の能力対象を選んでください：</p>`;
             players.forEach(p => {
-                html += `<button class="action-btn" onclick="executeOnlineThief('${p.id}', '${p.name}')">${p.name} と交換</button><br>`;
+                let isSel = (selectedVoteTargetId === p.id);
+                html += `<button class="action-btn ${isSel ? 'selected-target' : ''}" onclick="executeOnlineThief('${p.id}', '${p.name}')">${p.name} と交換 ${isSel ? '✓ 選択中' : ''}</button><br>`;
             });
             html += `<button class="action-btn" style="border-color:#aaa;" onclick="completeNightAction('交換しませんでした')">交換しない</button>`;
         } else if(myRole === "人狼") {
@@ -533,43 +1976,53 @@
             if(wolves.length > 0) {
                 let wNames = wolves.map(w => w.name).join(', ');
                 myNightActionResultText = `仲間の人狼: ${wNames}`;
-                html += `<p>🐺 仲間の人狼: <b>${wNames}</b></p>`;
+                html += `
+                    <div style="margin: 10px 0;">
+                        <img src="jinrou.png" style="height: 96px; object-fit: contain; display: block; margin: 0 auto 6px auto;">
+                        <p style="margin:0; font-size:0.95rem; color:#f9ed69;">仲間の人狼: <b>${wNames}</b></p>
+                    </div>
+                `;
             } else {
-                myNightActionResultText = `仲間の人狼はいません（一匹狼）`;
-                html += `<p class="info-text">🐺 仲間の人狼はいません（一匹狼）。</p>`;
+                myNightActionResultText = `仲間の人狼はいません`;
+                html += `
+                    <div style="margin: 10px 0;">
+                        <img src="jinrou.png" style="height: 96px; object-fit: contain; display: block; margin: 0 auto 6px auto;">
+                        <p style="margin:0; font-size:0.95rem; color:#ccc;">仲間の人狼はいません（一匹狼）</p>
+                    </div>
+                `;
             }
-            html += `<button onclick="completeNightAction()" style="margin-top:10px;">確認・行動完了</button>`;
+            html += `<button onclick="completeNightAction('${myNightActionResultText}')" style="margin-top:10px;">確認・行動完了</button>`;
         } else {
             myNightActionResultText = "能力行使なし";
             html += `<p class="info-text">この役職に夜の特殊能力はありません。</p>`;
-            html += `<button onclick="completeNightAction()" style="margin-top:10px;">確認完了</button>`;
+            html += `<button onclick="completeNightAction('能力行使なし')" style="margin-top:10px;">確認完了</button>`;
         }
 
         area.innerHTML = html;
     }
 
     async function executeOnlineSeer(targetId, targetName) {
+        if(myNightDoneLocal) return;
+        selectedVoteTargetId = targetId;
         const role = localRoomData.initialRoles[targetId];
         const displayRole = roleIcons[role] || role;
-        myNightActionResultText = `${targetName} を占い ➔ “${displayRole}”`;
-        document.getElementById('action-area').innerHTML = `
-            <p>占い結果：</p><p class="role-name">${targetName} は “${displayRole}”</p>
-            <button onclick="completeNightAction()">確認完了</button>
-        `;
+        myNightActionResultText = `${targetName} ➔ ${displayRole}`;
+        renderNightActionsHub(localRoomData);
+        setTimeout(() => completeNightAction(`占い結果: ${targetName} ➔ ${displayRole}`), 300);
     }
 
     async function executeOnlineSeerCentral() {
+        if(myNightDoneLocal) return;
         const c = localRoomData.centralCards;
         const displayC0 = roleIcons[c[0]] || c[0];
         const displayC1 = roleIcons[c[1]] || c[1];
-        myNightActionResultText = `中央2枚を占い ➔ “${displayC0}” と “${displayC1}”`;
-        document.getElementById('action-area').innerHTML = `
-            <p>占い結果（中央の2枚）：</p><p class="role-name">“${displayC0}” と “${displayC1}”</p>
-            <button onclick="completeNightAction()">確認完了</button>
-        `;
+        myNightActionResultText = `中央2枚 ➔ ${displayC0} と ${displayC1}`;
+        await completeNightAction(`中央占い: ${displayC0} / ${displayC1}`);
     }
 
     async function executeOnlineThief(targetId, targetName) {
+        if(myNightDoneLocal) return;
+        selectedVoteTargetId = targetId;
         let finalRoles = localRoomData.finalRoles;
         const targetRole = finalRoles[targetId];
         const displayTargetRole = roleIcons[targetRole] || targetRole;
@@ -577,85 +2030,159 @@
         finalRoles[myPlayerId] = targetRole;
         finalRoles[targetId] = "怪盗";
 
-        myNightActionResultText = `${targetName} と交換 ➔ 新役職 “${displayTargetRole}”`;
+        myNightActionResultText = `${targetName} と交換 ➔ ${displayTargetRole}`;
 
         await db.collection("rooms").doc(roomId).update({ finalRoles: finalRoles });
-
-        document.getElementById('action-area').innerHTML = `
-            <p>${targetName} と役職を交換しました！</p>
-            <p>あなたの新しい役職: <b class="role-name">${displayTargetRole}</b></p>
-            <button onclick="completeNightAction()">確認完了</button>
-        `;
+        renderNightActionsHub(localRoomData);
+        setTimeout(() => completeNightAction(`怪盗結果: ${targetName}と交換`), 300);
     }
 
     async function completeNightAction(customText) {
         if(customText) myNightActionResultText = customText;
+        myNightDoneLocal = true;
 
-        let nightDone = localRoomData.nightDone || {};
-        nightDone[myPlayerId] = true;
+        let updateObj = {};
+        updateObj[`nightDone.${myPlayerId}`] = true;
 
-        let updates = { nightDone: nightDone };
-        if(Object.keys(nightDone).length === localRoomData.players.length) {
-            updates.status = "day_discussion";
-            updates.timerEndTime = Date.now() + (localRoomData.timerMinutes * 60 * 1000);
+        await db.collection("rooms").doc(roomId).update(updateObj);
+    }
+
+    function processStandardNightActions(data) {
+        const nActions = data.nightActions || {};
+        const day = data.dayCount || 1;
+        if(day === 1) return { reVote: false, victimId: null, lastHunterTarget: {} };
+
+        let attackVotes = {};
+        Object.keys(nActions).forEach(pId => {
+            if(data.finalRoles[pId] === "人狼" && nActions[pId].attackTarget) {
+                let t = nActions[pId].attackTarget;
+                attackVotes[t] = (attackVotes[t] || 0) + 1;
+            }
+        });
+
+        let maxV = 0;
+        Object.values(attackVotes).forEach(v => { if(v > maxV) maxV = v; });
+
+        let topTargets = [];
+        Object.keys(attackVotes).forEach(t => { if(attackVotes[t] === maxV) topTargets.push(t); });
+
+        if(topTargets.length > 1 && !data.wolfReVote) {
+            return { reVote: true, reVoteCandidates: topTargets };
         }
+
+        let attackTargetId = null;
+        if(topTargets.length === 1) {
+            attackTargetId = topTargets[0];
+        } else if(topTargets.length > 1) {
+            attackTargetId = topTargets[Math.floor(Math.random() * topTargets.length)];
+        }
+
+        let hunterTargets = [];
+        let newHunterLast = {};
+        Object.keys(nActions).forEach(pId => {
+            if(data.finalRoles[pId] === "狩人" && nActions[pId].hunterTarget) {
+                hunterTargets.push(nActions[pId].hunterTarget);
+                newHunterLast[pId] = nActions[pId].hunterTarget;
+            }
+        });
+
+        let victimId = attackTargetId;
+        if(attackTargetId && hunterTargets.includes(attackTargetId)) {
+            victimId = null;
+        }
+
+        return { reVote: false, victimId: victimId, lastHunterTarget: newHunterLast };
+    }
+
+    async function processMorningTransition() {
+        let updates = { status: "day_discussion" };
+        let aliveObj = { ...localRoomData.alivePlayers };
+        
+        if(localRoomData.lastNightVictimId) {
+            aliveObj[localRoomData.lastNightVictimId] = false;
+        }
+        updates.alivePlayers = aliveObj;
+        updates.timerEndTime = Date.now() + (localRoomData.timerMinutes * 60 * 1000);
+
+        let winState = checkStandardWinCondition(localRoomData.finalRoles, aliveObj);
+        if(winState) {
+            updates.status = "result";
+            updates.playerStats = calculateStandardResults(localRoomData, winState);
+        }
+
         await db.collection("rooms").doc(roomId).update(updates);
     }
 
     function buildMemoGridHtml(data) {
         let memoCardsHtml = `<div class="co-grid">`;
+        const mode = data.gameMode || "jinro";
+
         data.players.forEach(p => {
-            let memo = personalMemos[p.id] || { role: "未CO", detail1: "", detail2: "", detail3: "" };
+            let memo = personalMemos[p.id] || { 
+                coRole: "未CO", 
+                d1_target: "", d1_res: "", 
+                d2_target: "", d2_res: "",
+                d3_target: "", d3_res: "",
+                d4_target: "", d4_res: ""
+            };
 
-            let extraSelectsHtml = "";
-            if(memo.role === "占い師") {
-                let targetOptions = `<option value="中央2枚" ${memo.detail1 === '中央2枚' ? 'selected' : ''}>中央2枚</option>`;
-                data.players.forEach(other => {
-                    targetOptions += `<option value="${other.name}" ${memo.detail1 === other.name ? 'selected' : ''}>${other.name}</option>`;
-                });
-                let resOptions = ["村人", "人狼", "占い師", "怪盗", "狂人"].map(r => `<option value="${r}" ${memo.detail2 === r ? 'selected' : ''}>${roleIcons[r] || r}</option>`).join('');
+            let roleOptions = "";
+            let extraInputs = "";
 
-                if (memo.detail1 === "中央2枚") {
-                    let resOptions2 = ["村人", "人狼", "占い師", "怪盗", "狂人"].map(r => `<option value="${r}" ${memo.detail3 === r ? 'selected' : ''}>${roleIcons[r] || r}</option>`).join('');
-                    extraSelectsHtml = `
-                        <span class="memo-label">占先:</span>
-                        <select onchange="updateMemo('${p.id}', 'detail1', this.value)">${targetOptions}</select>
-                        <span class="memo-label">結果1枚目:</span>
-                        <select onchange="updateMemo('${p.id}', 'detail2', this.value)"><option value="">選択</option>${resOptions}</select>
-                        <span class="memo-label">結果2枚目:</span>
-                        <select onchange="updateMemo('${p.id}', 'detail3', this.value)"><option value="">選択</option>${resOptions2}</select>
-                    `;
-                } else {
-                    extraSelectsHtml = `
-                        <span class="memo-label">占先:</span>
-                        <select onchange="updateMemo('${p.id}', 'detail1', this.value)">${targetOptions}</select>
-                        <span class="memo-label">結果:</span>
-                        <select onchange="updateMemo('${p.id}', 'detail2', this.value)"><option value="">選択</option>${resOptions}</select>
-                    `;
+            if(mode === "wordwolf") {
+                roleOptions = ["未CO", "市民", "人狼"].map(r => `<option value="${r}" ${memo.coRole === r ? 'selected' : ''}>${r}</option>`).join('');
+            } else if(mode === "standard") {
+                let rList = ["未CO", "村人", "占い師", "霊媒師", "狩人", "狂人", "狂信者", "人狼"];
+                roleOptions = rList.map(r => `<option value="${r}" ${memo.coRole === r ? 'selected' : ''}>${roleIcons[r] || r}</option>`).join('');
+
+                if(memo.coRole === "占い師" || memo.coRole === "霊媒師") {
+                    const days = [1, 2, 3, 4];
+                    let dayBoxes = days.map(d => {
+                        let tKey = `d${d}_target`;
+                        let rKey = `d${d}_res`;
+                        let targetOpts = data.players.filter(o => o.id !== p.id).map(o => `<option value="${o.name}" ${memo[tKey] === o.name ? 'selected' : ''}>${o.name}</option>`).join('');
+                        let resOpts = ["〇", "●"].map(res => `<option value="${res}" ${memo[rKey] === res ? 'selected' : ''}>${res}</option>`).join('');
+
+                        return `
+                            <div class="memo-day-box">
+                                <span class="memo-label" style="color:#f9ed69;">${d}日目</span>
+                                <select style="font-size:0.75rem; padding:2px;" onchange="updateMemoField('${p.id}', '${tKey}', this.value)"><option value="">対象</option>${targetOpts}</select>
+                                <select style="font-size:0.75rem; padding:2px; margin-top:2px;" onchange="updateMemoField('${p.id}', '${rKey}', this.value)"><option value="">結果</option>${resOpts}</select>
+                            </div>
+                        `;
+                    }).join('');
+
+                    extraInputs = `<div class="memo-day-grid">${dayBoxes}</div>`;
+                } else if(memo.coRole === "狩人") {
+                    const days = [1, 2, 3, 4];
+                    let dayBoxes = days.map(d => {
+                        let tKey = `d${d}_target`;
+                        let targetOpts = data.players.filter(o => o.id !== p.id).map(o => `<option value="${o.name}" ${memo[tKey] === o.name ? 'selected' : ''}>${o.name}</option>`).join('');
+
+                        return `
+                            <div class="memo-day-box">
+                                <span class="memo-label" style="color:#4ecca3;">${d}日目護衛</span>
+                                <select style="font-size:0.75rem; padding:2px; margin-top:2px;" onchange="updateMemoField('${p.id}', '${tKey}', this.value)"><option value="">対象</option>${targetOpts}</select>
+                            </div>
+                        `;
+                    }).join('');
+
+                    extraInputs = `<div class="memo-day-grid">${dayBoxes}</div>`;
                 }
-            } else if(memo.role === "怪盗") {
-                let targetOptions = `<option value="">選択</option>`;
-                data.players.filter(o => o.id !== p.id).forEach(other => {
-                    targetOptions += `<option value="${other.name}" ${memo.detail1 === other.name ? 'selected' : ''}>${other.name}</option>`;
-                });
-                let stolenOptions = ["村人", "人狼", "占い師", "狂人"].map(r => `<option value="${r}" ${memo.detail2 === r ? 'selected' : ''}>${roleIcons[r] || r}</option>`).join('');
-
-                extraSelectsHtml = `
-                    <span class="memo-label">奪相手:</span>
-                    <select onchange="updateMemo('${p.id}', 'detail1', this.value)">${targetOptions}</select>
-                    <span class="memo-label">獲得:</span>
-                    <select onchange="updateMemo('${p.id}', 'detail2', this.value)"><option value="">選択</option>${stolenOptions}</select>
-                `;
+            } else {
+                let rList = ["未CO", "村人", "占い師", "怪盗", "狂人", "人狼"];
+                roleOptions = rList.map(r => `<option value="${r}" ${memo.coRole === r ? 'selected' : ''}>${roleIcons[r] || r}</option>`).join('');
             }
-
-            let roleOptions = ["未CO", "村人", "占い師", "怪盗", "狂人", "人狼"].map(r => `<option value="${r}" ${memo.role === r ? 'selected' : ''}>${roleIcons[r] || r}</option>`).join('');
 
             memoCardsHtml += `
                 <div class="co-card">
-                    <div class="co-card-name">${p.name}</div>
-                    <span class="memo-label">役職CO:</span>
-                    <select onchange="updateMemoRole('${p.id}', this.value)">${roleOptions}</select>
-                    ${extraSelectsHtml}
+                    <div class="co-card-name">${p.name} ${!data.alivePlayers[p.id] ? '(死亡)' : ''}</div>
+                    
+                    <div class="co-section">
+                        <span class="memo-label" style="color:#f9ed69; font-weight:bold;">CO役職</span>
+                        <select onchange="updateMemoRoleSingle('${p.id}', this.value)">${roleOptions}</select>
+                        ${extraInputs}
+                    </div>
                 </div>
             `;
         });
@@ -671,25 +2198,28 @@
     }
 
     function startTimerSync(data) {
+        lastRenderKey = "day_discussion_" + data.dayCount;
         const area = document.getElementById('action-area');
+        const mode = data.gameMode || "jinro";
         const myInitialRole = data.initialRoles[myPlayerId];
-        const displayMyInitialRole = roleIcons[myInitialRole] || myInitialRole;
-        const deckListStr = (data.allDeck || []).map(r => roleIcons[r] || r).join(' / ');
+        const displayMyInitialRole = mode === "wordwolf" ? (data.wordWolfData.assignments[myPlayerId] || "") : (roleIcons[myInitialRole] || myInitialRole);
+        const deckListStr = mode === "wordwolf" ? (data.allDeck || []).join(' / ') : (data.allDeck || []).map(r => roleIcons[r] || r).join(' / ');
 
         area.innerHTML = `
             <p><b>朝の議論タイム</b></p>
             <div class="timer-display" id="timer">--:--</div>
 
-            <p style="font-size:0.85rem; color:#f9ed69; margin:5px 0;">👇 プレイヤー別メモ（自分のみ表示）</p>
             <div id="memo-grid-container">${buildMemoGridHtml(data)}</div>
 
             <div class="info-card">
-                <p style="margin:4px 0;">👤 <b>あなたの初期役職:</b> <span style="color:#f9ed69; font-weight:bold;">${displayMyInitialRole}</span></p>
-                <p style="margin:4px 0;">🔍 <b>あなたの夜の行動結果:</b> ${myNightActionResultText || 'なし'}</p>
-                <p style="margin:4px 0; border-top:1px dashed #555; padding-top:4px;">🃏 <b>全体で使用中の役職リスト:</b><br><span style="color:#ccc;">${deckListStr}</span></p>
+                <p style="margin:4px 0;">👤 <b>あなたのお題・役職:</b> <span style="color:#f9ed69; font-weight:bold;">${displayMyInitialRole}</span></p>
+                <p style="margin:4px 0;">🔍 <b>確認情報:</b> <span style="color:#4ecca3; font-weight:bold;">${myNightActionResultText || 'なし'}</span></p>
+                ${mode === 'jinro' ? `<p style="margin:4px 0; border-top:1px dashed #555; padding-top:4px;">🃏 <b>全体で使用中の役職リスト:</b><br><span style="color:#ccc;">${deckListStr}</span></p>` : ''}
             </div>
 
-            ${isHost ? `<button onclick="forceVotingPhase()">今すぐ投票へ進む</button>` : '<p class="info-text">ホストが投票に進むのを待っています...</p>'}
+            ${renderVoteLogsHtml(data)}
+
+            ${isHost ? `<button onclick="forceVotingPhase()">今すぐ投票フェーズへ進む</button>` : '<p class="info-text">ホストが投票に進むのを待っています...</p>'}
         `;
 
         if(timerInterval) clearInterval(timerInterval);
@@ -712,54 +2242,244 @@
         }, 1000);
     }
 
-    function updateMemoRole(playerId, newRole) {
-        if(!personalMemos[playerId]) personalMemos[playerId] = { role: "未CO", detail1: "", detail2: "", detail3: "" };
-        personalMemos[playerId].role = newRole;
-        personalMemos[playerId].detail1 = (newRole === "占い師") ? "中央2枚" : "";
-        personalMemos[playerId].detail2 = "";
-        personalMemos[playerId].detail3 = "";
+    function updateMemoRoleSingle(playerId, newRole) {
+        if(!personalMemos[playerId]) personalMemos[playerId] = { coRole: "未CO" };
+        personalMemos[playerId].coRole = newRole;
+        for(let d=1; d<=4; d++) {
+            personalMemos[playerId][`d${d}_target`] = "";
+            personalMemos[playerId][`d${d}_res`] = "";
+        }
         renderMemoGridOnly();
     }
 
-    function updateMemo(playerId, field, value) {
-        if(!personalMemos[playerId]) personalMemos[playerId] = { role: "未CO", detail1: "", detail2: "", detail3: "" };
+    function updateMemoField(playerId, field, value) {
+        if(!personalMemos[playerId]) personalMemos[playerId] = { coRole: "未CO" };
         personalMemos[playerId][field] = value;
-        if (field === 'detail1') {
-            if (value !== '中央2枚') {
-                personalMemos[playerId].detail3 = "";
-            }
-            renderMemoGridOnly();
-        }
+        renderMemoGridOnly();
     }
 
     async function forceVotingPhase() {
-        await db.collection("rooms").doc(roomId).update({ status: "voting" });
+        lastRenderKey = "";
+        let updates = { status: "voting" };
+        const mode = localRoomData.gameMode || "jinro";
+        if(mode === "standard") {
+            updates.standardVoteState = {
+                phase: 'handraise',
+                hands: {},
+                votes: {},
+                speakerId: null,
+                handraiseEndTime: Date.now() + 10000,
+                noticeEndTime: 0,
+                speechEndTime: 0,
+                runoffList: [],
+                runoffOrder: [],
+                runoffIndex: 0
+            };
+        }
+        await db.collection("rooms").doc(roomId).update(updates);
     }
 
     function renderVotingButtons(data) {
+        lastRenderKey = "wordwolf_voting";
         const area = document.getElementById('action-area');
-        let html = `<p class="info-text">処刑したいプレイヤーを選択してください：</p>`;
+        const mode = data.gameMode || "jinro";
         
-        data.players.filter(p => p.id !== myPlayerId).forEach(p => {
-            html += `<button class="action-btn" onclick="submitVote('${p.id}')">${p.name} に投票</button><br>`;
+        if(!data.alivePlayers[myPlayerId]) {
+            area.innerHTML = `<p style="color:#e94560;">あなたは死亡しているため投票権がありません。</p><p class="info-text">全員の投票が揃うまでお待ちください...</p>`;
+            return;
+        }
+
+        let html = `<p class="info-text">${mode === 'wordwolf' ? '一番怪しい（ウルフだと思う）プレイヤーに投票してください：' : '処刑したいプレイヤーを選択してください：'}</p>`;
+        
+        let currentVote = selectedVoteTargetId || (data.votes && data.votes[myPlayerId]);
+        data.players.filter(p => p.id !== myPlayerId && data.alivePlayers[p.id]).forEach(p => {
+            let isSel = (currentVote === p.id);
+            html += `<button class="action-btn ${isSel ? 'selected-target' : ''}" onclick="submitVote('${p.id}')">${p.name} に投票 ${isSel ? '✓ 選択中' : ''}</button><br>`;
         });
-        html += `<button class="action-btn" style="border-color:#f9ed69;" onclick="submitVote('none')">🕊️ 平和村を願う</button>`;
+        if(mode === 'jinro') {
+            let isSel = (currentVote === 'none');
+            html += `<button class="action-btn ${isSel ? 'selected-target' : ''}" style="border-color:#f9ed69;" onclick="submitVote('none')">平和村を願う ${isSel ? '✓ 選択中' : ''}</button>`;
+        }
         area.innerHTML = html;
     }
 
     async function submitVote(targetId) {
-        let votes = localRoomData.votes || {};
-        votes[myPlayerId] = targetId;
+        selectedVoteTargetId = targetId;
+        renderVotingButtons(localRoomData);
 
-        let updates = { votes: votes };
+        let updateObj = {};
+        updateObj[`votes.${myPlayerId}`] = targetId;
+
+        let freshData = (await db.collection("rooms").doc(roomId).get()).data();
+        let votes = { ...(freshData.votes || {}), [myPlayerId]: targetId };
+        const mode = freshData.gameMode || "jinro";
         
-        if(Object.keys(votes).length === localRoomData.players.length) {
-            updates.status = "result";
-            let updatedStats = calculateGameResults(localRoomData, votes);
-            updates.playerStats = updatedStats;
+        let livingPlayers = freshData.players.filter(p => freshData.alivePlayers && freshData.alivePlayers[p.id]);
+
+        if(Object.keys(votes).length === livingPlayers.length) {
+            lastRenderKey = "";
+            if(mode === "wordwolf") {
+                let voteCounts = {};
+                freshData.players.forEach(p => voteCounts[p.id] = 0);
+                Object.values(votes).forEach(t => { if(voteCounts[t] !== undefined) voteCounts[t]++; });
+
+                let maxVotes = 0;
+                Object.values(voteCounts).forEach(c => { if(c > maxVotes) maxVotes = c; });
+
+                let mostVotedIds = [];
+                Object.keys(voteCounts).forEach(id => {
+                    if (voteCounts[id] === maxVotes) mostVotedIds.push(id);
+                });
+
+                let wolfIds = freshData.players.filter(p => freshData.initialRoles[p.id] === "人狼").map(p => p.id);
+                let wolfVoted = mostVotedIds.some(id => wolfIds.includes(id));
+
+                if(wolfVoted) {
+                    updateObj["status"] = "wordwolf_guess";
+                    updateObj["timerEndTime"] = Date.now() + (60 * 1000);
+                } else {
+                    updateObj["status"] = "result";
+                    updateObj["playerStats"] = calculateWordWolfResults(freshData, "wolf_win");
+                }
+            } else {
+                updateObj["status"] = "result";
+                updateObj["playerStats"] = calculateGameResults(freshData, votes);
+            }
         }
 
-        await db.collection("rooms").doc(roomId).update(updates);
+        setTimeout(() => {
+            db.collection("rooms").doc(roomId).update(updateObj);
+        }, 200);
+    }
+
+    function checkStandardWinCondition(finalRoles, aliveObj) {
+        let aliveWolves = 0;
+        let aliveHumans = 0;
+
+        Object.keys(aliveObj).forEach(id => {
+            if(aliveObj[id]) {
+                if(finalRoles[id] === "人狼") aliveWolves++;
+                else aliveHumans++;
+            }
+        });
+
+        if(aliveWolves === 0) return "human_win";
+        if(aliveWolves >= aliveHumans) return "wolf_win";
+        return null;
+    }
+
+    function calculateStandardResults(data, winState) {
+        let playerStats = JSON.parse(JSON.stringify(data.playerStats || {}));
+
+        data.players.forEach(p => {
+            const role = data.finalRoles[p.id];
+            let isWolfCamp = (role === "人狼" || role === "狂人" || role === "狂信者");
+            let isWon = (winState === "wolf_win") ? isWolfCamp : !isWolfCamp;
+
+            if(!playerStats[p.id]) {
+                playerStats[p.id] = { totalPlayed: 0, totalWon: 0 };
+            }
+            playerStats[p.id].totalPlayed++;
+            if(isWon) playerStats[p.id].totalWon++;
+        });
+
+        return playerStats;
+    }
+
+    function renderWordWolfGuessPhase(data) {
+        lastRenderKey = "wordwolf_guess";
+        const area = document.getElementById('action-area');
+        let wolfIds = data.players.filter(p => data.initialRoles[p.id] === "人狼").map(p => p.id);
+        let wolfNames = data.players.filter(p => wolfIds.includes(p.id)).map(p => p.name).join(', ');
+        let civilianWord = data.wordWolfData.civilianWord;
+
+        let html = `
+            <p style="color:#e94560; font-weight:bold; font-size:1.1rem;">人狼が最多票に選ばれました！</p>
+            <p>選ばれた人狼: <b style="color:#f9ed69;">${wolfNames}</b></p>
+            <p class="info-text">人狼は口頭で村人側のお題を推測して答えてください。</p>
+            
+            <div class="timer-display" id="ww-timer">01:00</div>
+
+            <div class="info-card">
+                <p style="margin:4px 0; text-align:center;">村人側のお題（正解）: <b style="color:#4ecca3; font-size:1.2rem;">${civilianWord}</b></p>
+            </div>
+
+            <p class="info-text">制限時間終了後、参加者全員で判定を行います。</p>
+        `;
+
+        let myGuess = data.guessVotes && data.guessVotes[myPlayerId];
+        if(!myGuess) {
+            html += `
+                <div style="margin-top:15px; border-top:1px solid #334257; padding-top:15px;">
+                    <p>口頭の回答を聞いて判定してください：</p>
+                    <button style="background-color:#4ecca3; color:#1a1a2e; font-weight:bold;" onclick="submitGuessVote('correct')">お題を当てられた</button>
+                    <button style="background-color:#e94560; font-weight:bold;" onclick="submitGuessVote('incorrect')">外した</button>
+                </div>
+            `;
+        } else {
+            html += `<p style="color:#4ecca3; margin-top:15px;">判定を送信しました。全員の投票を待っています...</p>`;
+        }
+
+        area.innerHTML = html;
+
+        if(!window.wwTimerInterval) {
+            window.wwTimerInterval = setInterval(() => {
+                const now = Date.now();
+                const diff = Math.max(0, Math.floor((data.timerEndTime - now) / 1000));
+                const m = Math.floor(diff / 60);
+                const s = diff % 60;
+                
+                const timerElem = document.getElementById('ww-timer');
+                if(timerElem) timerElem.innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+
+                if(diff <= 0) {
+                    clearInterval(window.wwTimerInterval);
+                    window.wwTimerInterval = null;
+                }
+            }, 1000);
+        }
+    }
+
+    async function submitGuessVote(resultStr) {
+        let updateObj = {};
+        updateObj[`guessVotes.${myPlayerId}`] = resultStr;
+
+        let freshData = (await db.collection("rooms").doc(roomId).get()).data();
+        let guessVotes = { ...(freshData.guessVotes || {}), [myPlayerId]: resultStr };
+
+        if(Object.keys(guessVotes).length === freshData.players.length) {
+            if(window.wwTimerInterval) { clearInterval(window.wwTimerInterval); window.wwTimerInterval = null; }
+            
+            let correctCount = 0;
+            let incorrectCount = 0;
+            Object.values(guessVotes).forEach(v => {
+                if(v === 'correct') correctCount++;
+                else incorrectCount++;
+            });
+
+            let wolfWon = (correctCount >= incorrectCount);
+            updateObj["status"] = "result";
+            updateObj["playerStats"] = calculateWordWolfResults(freshData, wolfWon ? "wolf_win" : "civilian_win");
+        }
+
+        await db.collection("rooms").doc(roomId).update(updateObj);
+    }
+
+    function calculateWordWolfResults(data, winnerCamp) {
+        let playerStats = JSON.parse(JSON.stringify(data.playerStats || {}));
+
+        data.players.forEach(p => {
+            const isWolf = data.initialRoles[p.id] === "人狼";
+            let isWon = (winnerCamp === "wolf_win") ? isWolf : !isWolf;
+
+            if(!playerStats[p.id]) {
+                playerStats[p.id] = { totalPlayed: 0, totalWon: 0 };
+            }
+            playerStats[p.id].totalPlayed++;
+            if(isWon) playerStats[p.id].totalWon++;
+        });
+
+        return playerStats;
     }
 
     function calculateGameResults(data, votes) {
@@ -804,40 +2524,11 @@
                 isWon = isWerewolfCamp ? !isVillagerWin : isVillagerWin;
             }
 
-            let isCampWerewolf = (finalR === "人狼" || finalR === "狂人");
-
             if(!playerStats[p.id]) {
-                playerStats[p.id] = {
-                    totalPlayed: 0, totalWon: 0,
-                    villagerPlayed: 0, villagerWon: 0,
-                    werewolfPlayed: 0, werewolfWon: 0,
-                    roles: {
-                        "村人": { played: 0, won: 0 },
-                        "人狼": { played: 0, won: 0 },
-                        "占い師": { played: 0, won: 0 },
-                        "怪盗": { played: 0, won: 0 },
-                        "狂人": { played: 0, won: 0 }
-                    }
-                };
+                playerStats[p.id] = { totalPlayed: 0, totalWon: 0 };
             }
-
-            let pStat = playerStats[p.id];
-            pStat.totalPlayed++;
-            if(isWon) pStat.totalWon++;
-
-            if(isCampWerewolf) {
-                pStat.werewolfPlayed++;
-                if(isWon) pStat.werewolfWon++;
-            } else {
-                pStat.villagerPlayed++;
-                if(isWon) pStat.villagerWon++;
-            }
-
-            if(!pStat.roles[finalR]) {
-                pStat.roles[finalR] = { played: 0, won: 0 };
-            }
-            pStat.roles[finalR].played++;
-            if(isWon) pStat.roles[finalR].won++;
+            playerStats[p.id].totalPlayed++;
+            if(isWon) playerStats[p.id].totalWon++;
         });
 
         return playerStats;
@@ -845,108 +2536,268 @@
 
     function renderOnlineResults(data) {
         const area = document.getElementById('action-area');
+        const mode = data.gameMode || "jinro";
         const players = data.players;
-        const votes = data.votes;
-        const finalRoles = data.finalRoles;
-        const initialRoles = data.initialRoles;
 
-        let voteCounts = {};
-        players.forEach(p => voteCounts[p.id] = 0);
-        Object.values(votes).forEach(t => { if(t !== 'none' && voteCounts[t] !== undefined) voteCounts[t]++; });
+        if(window.wwTimerInterval) { clearInterval(window.wwTimerInterval); window.wwTimerInterval = null; }
 
-        let maxVotes = 0;
-        Object.values(voteCounts).forEach(c => { if(c > maxVotes) maxVotes = c; });
+        if(mode === "standard") {
+            let winState = checkStandardWinCondition(data.finalRoles, data.alivePlayers) || "human_win";
+            let myRole = data.finalRoles[myPlayerId];
+            let isWolfCamp = (myRole === "人狼" || myRole === "狂人" || myRole === "狂信者");
+            let iWon = (winState === "wolf_win") ? isWolfCamp : !isWolfCamp;
 
-        let hangedIds = [];
-        if (maxVotes >= 2) {
-            Object.keys(voteCounts).forEach(id => {
-                if (voteCounts[id] === maxVotes) hangedIds.push(id);
-            });
-        }
+            let resultTitleHtml = iWon ? `<div class="win-title">あなたの勝利！</div>` : `<div class="lose-title">あなたの敗北...</div>`;
+            let summaryText = winState === "wolf_win" ? "人狼陣営の勝利です！（人狼が生き残りました）" : "村人陣営の勝利です！（人狼が全滅しました）";
 
-        let aliveWerewolfCount = players.filter(p => finalRoles[p.id] === "人狼").length;
-        let isPeaceVillageScenario = (aliveWerewolfCount === 0);
-        let isVillagerWin = false;
+            let tableRows = players.map(p => {
+                let finR = roleIcons[data.finalRoles[p.id]] || data.finalRoles[p.id];
+                let isAlive = data.alivePlayers[p.id] ? ' (生存)' : ' (死亡)';
+                let pRole = data.finalRoles[p.id];
+                let pWolfCamp = (pRole === "人狼" || pRole === "狂人" || pRole === "狂信者");
+                let pWon = (winState === "wolf_win") ? pWolfCamp : !pWolfCamp;
+                let winLoseHtml = pWon ? '<span style="color:#4ecca3; font-weight:bold;">勝利</span>' : '<span style="color:#e94560; font-weight:bold;">敗北</span>';
 
-        if (isPeaceVillageScenario) {
-            isVillagerWin = (hangedIds.length === 0);
-        } else {
-            let hangedWerewolf = hangedIds.some(id => finalRoles[id] === "人狼");
-            isVillagerWin = hangedWerewolf;
-        }
-
-        let myFinalRole = finalRoles[myPlayerId];
-        let isMyCampWerewolf = (myFinalRole === "人狼" || myFinalRole === "狂人");
-        let iWon = isPeaceVillageScenario ? (hangedIds.length === 0) : (isMyCampWerewolf ? !isVillagerWin : isVillagerWin);
-
-        let resultTitleHtml = iWon 
-            ? `<div class="win-title">🎉 あなたの勝利！</div>` 
-            : `<div class="lose-title">💀 あなたの敗北...</div>`;
-
-        let summaryText = "";
-        if (isPeaceVillageScenario) {
-            summaryText = hangedIds.length === 0 
-                ? "平和村が達成されました！（人狼不在・処刑なし）" 
-                : "平和村でしたが、処刑が行われてしまいました。";
-        } else {
-            summaryText = isVillagerWin 
-                ? "村人陣営の勝利です！（人狼の処刑に成功）" 
-                : "人狼陣営の勝利です！（人狼が生き残りました）";
-        }
-
-        let tableRows = players.map(p => {
-            let initR = roleIcons[initialRoles[p.id]] || initialRoles[p.id];
-            let finR = roleIcons[finalRoles[p.id]] || finalRoles[p.id];
-            let vTargetId = votes[p.id];
-            let vTargetName = vTargetId === 'none' ? '🕊️ 平和村' : (players.find(x => x.id === vTargetId)?.name || '未投票');
-            let isHanged = hangedIds.includes(p.id) ? ' <span style="color:#e94560; font-weight:bold;">[処刑]</span>' : '';
-
-            return `
-                <tr>
-                    <td><b>${p.name}</b>${isHanged}</td>
-                    <td>${initR}</td>
-                    <td><b>${finR}</b></td>
-                    <td>${vTargetName}</td>
-                </tr>
-            `;
-        }).join('');
-
-        let centralStr = (data.centralCards || []).map(r => roleIcons[r] || r).join(' / ');
-
-        area.innerHTML = `
-            ${resultTitleHtml}
-            <p class="info-text">${summaryText}</p>
-
-            <table class="result-table">
-                <thead>
+                return `
                     <tr>
-                        <th>名前</th>
-                        <th>初期役職</th>
-                        <th>最終役職</th>
-                        <th>投票先</th>
+                        <td><b>${p.name}</b>${isAlive}</td>
+                        <td><b>${finR}</b></td>
+                        <td><b>${winLoseHtml}</b></td>
                     </tr>
-                </thead>
-                <tbody>
-                    ${tableRows}
-                </tbody>
-            </table>
+                `;
+            }).join('');
 
-            <p style="margin-top:15px; font-size:0.9rem;">📦 <b>中央のあまりカード:</b> ${centralStr}</p>
+            area.innerHTML = `
+                ${resultTitleHtml}
+                <p class="info-text">${summaryText}</p>
 
-            ${isHost ? `<button onclick="resetGameToWaiting()" style="margin-top:15px;">もう一度遊ぶ（待機部屋へ）</button>` : '<p class="info-text">ホストが次のゲームを開始するのを待っています...</p>'}
-        `;
+                <table class="result-table">
+                    <thead>
+                        <tr>
+                            <th>名前</th>
+                            <th>役職</th>
+                            <th>勝敗</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows}
+                    </tbody>
+                </table>
+
+                ${renderVoteLogsHtml(data)}
+
+                ${isHost ? `<button onclick="resetGameToWaiting()" style="margin-top:15px;">もう一度遊ぶ（待機部屋へ）</button>` : '<p class="info-text">ホストが次のゲームを開始するのを待っています...</p>'}
+            `;
+
+        } else if(mode === "wordwolf") {
+            let wolfIds = players.filter(p => data.initialRoles[p.id] === "人狼").map(p => p.id);
+            let wolfNames = players.filter(p => wolfIds.includes(p.id)).map(p => p.name).join(', ');
+            
+            let guessVotes = data.guessVotes || {};
+            let correctCount = 0, incorrectCount = 0;
+            Object.values(guessVotes).forEach(v => { if(v === 'correct') correctCount++; else incorrectCount++; });
+            
+            let wolfWon = false;
+            let wolfVoted = true;
+            let summaryText = "";
+
+            let voteCounts = {};
+            players.forEach(p => voteCounts[p.id] = 0);
+            Object.values(data.votes || {}).forEach(t => { if(t !== 'none' && voteCounts[t] !== undefined) voteCounts[t]++; });
+            let maxVotes = 0;
+            Object.values(voteCounts).forEach(c => { if(c > maxVotes) maxVotes = c; });
+            let mostVotedIds = [];
+            Object.keys(voteCounts).forEach(id => { if (voteCounts[id] === maxVotes) mostVotedIds.push(id); });
+            wolfVoted = mostVotedIds.some(id => wolfIds.includes(id));
+
+            if(!wolfVoted) {
+                wolfWon = true;
+                summaryText = "人狼が投票で選ばれなかったため、人狼の勝利です！";
+            } else {
+                wolfWon = (correctCount >= incorrectCount);
+                summaryText = wolfWon ? "人狼が最多票に選ばれましたが、お題を見事当てたため人狼の勝利です！" : "人狼が最多票に選ばれ、お題を外したため市民側の勝利です！";
+            }
+
+            let iWon = (wolfWon && wolfIds.includes(myPlayerId)) || (!wolfWon && !wolfIds.includes(myPlayerId));
+            let resultTitleHtml = iWon ? `<div class="win-title">あなたの勝利！</div>` : `<div class="lose-title">あなたの敗北...</div>`;
+
+            let tableRows = players.map(p => {
+                let isW = wolfIds.includes(p.id);
+                let pWord = data.wordWolfData.assignments[p.id];
+                let pWon = (wolfWon && isW) || (!wolfWon && !isW);
+                let winLoseHtml = pWon ? '<span style="color:#4ecca3; font-weight:bold;">勝利</span>' : '<span style="color:#e94560; font-weight:bold;">敗北</span>';
+
+                return `
+                    <tr>
+                        <td><b>${p.name}</b> ${isW ? '<span style="color:#d32f2f; font-weight:bold;">[人狼]</span>' : '[市民]'}</td>
+                        <td>${pWord}</td>
+                        <td><b>${winLoseHtml}</b></td>
+                    </tr>
+                `;
+            }).join('');
+
+            area.innerHTML = `
+                ${resultTitleHtml}
+                <p class="info-text">${summaryText}</p>
+
+                <p style="margin-top:10px;"><b>正解のお題:</b></p>
+                <p style="font-size:0.95rem; color:#f9ed69;">市民側: ${data.wordWolfData.civilianWord} ／ 人狼側: ${data.wordWolfData.wolfWord}</p>
+
+                <table class="result-table">
+                    <thead>
+                        <tr>
+                            <th>名前 (役職)</th>
+                            <th>配られたお題</th>
+                            <th>勝敗</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows}
+                    </tbody>
+                </table>
+
+                ${isHost ? `<button onclick="resetGameToWaiting()" style="margin-top:15px;">もう一度遊ぶ（待機部屋へ）</button>` : '<p class="info-text">ホストが次のゲームを開始するのを待っています...</p>'}
+            `;
+
+        } else {
+            const votes = data.votes;
+            const finalRoles = data.finalRoles;
+            const initialRoles = data.initialRoles;
+
+            let voteCounts = {};
+            players.forEach(p => voteCounts[p.id] = 0);
+            Object.values(votes).forEach(t => { if(t !== 'none' && voteCounts[t] !== undefined) voteCounts[t]++; });
+
+            let maxVotes = 0;
+            Object.values(voteCounts).forEach(c => { if(c > maxVotes) maxVotes = c; });
+
+            let hangedIds = [];
+            if (maxVotes >= 2) {
+                Object.keys(voteCounts).forEach(id => {
+                    if (voteCounts[id] === maxVotes) hangedIds.push(id);
+                });
+            }
+
+            let aliveWerewolfCount = players.filter(p => finalRoles[p.id] === "人狼").length;
+            let isPeaceVillageScenario = (aliveWerewolfCount === 0);
+            let isVillagerWin = false;
+
+            if (isPeaceVillageScenario) {
+                isVillagerWin = (hangedIds.length === 0);
+            } else {
+                let hangedWerewolf = hangedIds.some(id => finalRoles[id] === "人狼");
+                isVillagerWin = hangedWerewolf;
+            }
+
+            function checkPlayerWon(pId) {
+                let pFinalRole = finalRoles[pId];
+                let isCampWerewolf = (pFinalRole === "人狼" || pFinalRole === "狂人");
+                return isPeaceVillageScenario ? (hangedIds.length === 0) : (isCampWerewolf ? !isVillagerWin : isVillagerWin);
+            }
+
+            let iWon = checkPlayerWon(myPlayerId);
+            let resultTitleHtml = iWon ? `<div class="win-title">あなたの勝利！</div>` : `<div class="lose-title">あなたの敗北...</div>`;
+
+            let summaryText = "";
+            if (isPeaceVillageScenario) {
+                summaryText = hangedIds.length === 0 ? "平和村が達成されました！（人狼不在・処刑なし）" : "平和村でしたが、処刑が行われてしまいました。";
+            } else {
+                summaryText = isVillagerWin ? "村人陣営の勝利です！（人狼の処刑に成功）" : "人狼陣営の勝利です！（人狼が生き残りました）";
+            }
+
+            let tableRows = players.map(p => {
+                let initR = roleIcons[initialRoles[p.id]] || initialRoles[p.id];
+                let finR = roleIcons[finalRoles[p.id]] || finalRoles[p.id];
+                let vTargetId = votes[p.id];
+                let vTargetName = vTargetId === 'none' ? '平和村' : (players.find(x => x.id === vTargetId)?.name || '未投票');
+                let isHanged = hangedIds.includes(p.id) ? ' <span style="color:#e94560; font-weight:bold;">[処刑]</span>' : '';
+                
+                let pWon = checkPlayerWon(p.id);
+                let winLoseHtml = pWon ? '<span style="color:#4ecca3; font-weight:bold;">勝利</span>' : '<span style="color:#e94560; font-weight:bold;">敗北</span>';
+
+                return `
+                    <tr>
+                        <td><b>${p.name}</b>${isHanged}</td>
+                        <td>${initR}</td>
+                        <td><b>${finR}</b></td>
+                        <td>${vTargetName}</td>
+                        <td><b>${winLoseHtml}</b></td>
+                    </tr>
+                `;
+            }).join('');
+
+            let centralStr = (data.centralCards || []).map(r => roleIcons[r] || r).join(' / ');
+
+            area.innerHTML = `
+                ${resultTitleHtml}
+                <p class="info-text">${summaryText}</p>
+
+                <table class="result-table">
+                    <thead>
+                        <tr>
+                            <th>名前</th>
+                            <th>初期役職</th>
+                            <th>最終役職</th>
+                            <th>投票先</th>
+                            <th>勝敗</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows}
+                    </tbody>
+                </table>
+
+                <p style="margin-top:15px; font-size:0.9rem;"><b>中央のあまりカード:</b> ${centralStr}</p>
+
+                ${isHost ? `<button onclick="resetGameToWaiting()" style="margin-top:15px;">もう一度遊ぶ（待機部屋へ）</button>` : '<p class="info-text">ホストが次のゲームを開始するのを待っています...</p>'}
+            `;
+        }
     }
 
     async function resetGameToWaiting() {
+        personalMemos = {};
+        myNightDoneLocal = false;
+        myRoleHistory = [];
+        selectedVoteTargetId = null;
+        currentNightDayTracked = 0;
+        lastRenderKey = "";
+        if(window.wwTimerInterval) { clearInterval(window.wwTimerInterval); window.wwTimerInterval = null; }
+        if(votePhaseTimerInterval) { clearInterval(votePhaseTimerInterval); votePhaseTimerInterval = null; }
+        if(nightTimerInterval) { clearInterval(nightTimerInterval); nightTimerInterval = null; window.nightTimerRunning = false; }
+        if(window.lwInterval) { clearInterval(window.lwInterval); window.lwInterval = null; }
+        window.handraiseTimerCheckStarted = false;
+        window.noticeTimerStarted = false;
+        window.speechTimerStarted = false;
+        window.runoffNoticeStarted = false;
+        window.runoffSpeechStarted = false;
+        window.voteAnnounceTimerSet = false;
+        window.morningTimerSet = false;
+        window.lastWordsTimerIntervalSet = false;
+        
         await db.collection("rooms").doc(roomId).update({
             status: "waiting",
             allDeck: [],
             initialRoles: {},
             finalRoles: {},
             centralCards: [],
+            wordWolfData: {},
             nightDone: {},
+            nightActions: {},
+            wolfReVote: false,
+            wolfReVoteCandidates: [],
+            wolfChatLogs: [],
+            alivePlayers: {},
+            lastHangedId: null,
+            lastNightVictimId: null,
+            lastHunterTarget: {},
+            dayCount: 1,
             votes: {},
-            timerEndTime: null
+            voteLogs: [],
+            standardVoteState: null,
+            guessVotes: {},
+            timerEndTime: null,
+            nightTimerEndTime: null,
+            lastWordsEndTime: null
         });
     }
 </script>
